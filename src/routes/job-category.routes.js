@@ -3,6 +3,7 @@ const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const { auth, authorize } = require('../middleware/auth.middleware');
 const JobCategory = require('../models/jobCategory.model');
+const Job = require('../models/job.model');
 
 // Middleware for validation
 const validate = (req, res, next) => {
@@ -18,13 +19,61 @@ router.get('/', async (req, res) => {
   try {
     const { isActive, parentCategory } = req.query;
 
+    console.log('Dex');
     const query = {};
     if (isActive !== undefined) query.isActive = isActive === 'true';
     if (parentCategory) query.parentCategory = parentCategory;
 
-    const categories = await JobCategory.find(query)
-      .sort('name')
-      .populate('parentCategory', 'name');
+    // Get categories with job count aggregation
+    const categories = await JobCategory.aggregate([
+      { $match: query },
+      {
+        $lookup: {
+          from: 'jobs',
+          let: { categoryId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$categoryId', '$$categoryId'] },
+                    { $eq: ['$status', 'active'] }
+                    // { $gt: ['$expiryDate', new Date()] }
+                  ]
+                }
+              }
+            }
+          ],
+          as: 'activeJobs'
+        }
+      },
+      {
+        $addFields: {
+          count: { $size: '$activeJobs' }
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          name: 1,
+          description: 1,
+          isActive: 1,
+          parentCategory: 1,
+          count: 1,
+          createdAt: 1,
+          updatedAt: 1
+        }
+      },
+      { $sort: { name: 1 } }
+    ]);
+
+    // Populate parentCategory if needed
+    if (categories.length > 0) {
+      await JobCategory.populate(categories, {
+        path: 'parentCategory',
+        select: 'name'
+      });
+    }
 
     res.json(categories);
   } catch (error) {

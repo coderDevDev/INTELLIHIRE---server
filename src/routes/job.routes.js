@@ -27,8 +27,12 @@ router.get('/', async (req, res) => {
       sort = '-postedDate'
     } = req.query;
 
-    const query = { status: 'active', expiryDate: { $gt: new Date() } };
+    const query = {
+      status: 'active'
+      // expiryDate: { $gt: new Date() }
+    };
 
+    console.log({ category });
     if (category) query.categoryId = category;
     if (location) query.location = new RegExp(location, 'i');
     if (type) query.employmentType = type;
