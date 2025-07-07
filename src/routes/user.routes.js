@@ -41,6 +41,39 @@ const upload = multer({
   }
 });
 
+// Configure multer for PDS uploads
+const pdsStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = 'uploads/pds/';
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    cb(
+      null,
+      'pds-' +
+        req.user._id +
+        '-' +
+        uniqueSuffix +
+        path.extname(file.originalname)
+    );
+  }
+});
+const pdsUpload = multer({
+  storage: pdsStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'application/pdf') {
+      cb(null, true);
+    } else {
+      cb(new Error('Only PDF files are allowed.'));
+    }
+  }
+});
+
 // Middleware for validation
 const validate = (req, res, next) => {
   const errors = validationResult(req);
@@ -54,6 +87,10 @@ const validate = (req, res, next) => {
 router.get('/profile', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select('-password');
+    // Ensure arrays are always present
+    user.experience = user.experience || [];
+    user.education = user.education || [];
+    user.certification = user.certification || [];
     res.json(user);
   } catch (error) {
     res
@@ -151,6 +188,37 @@ router.post(
   }
 );
 
+// Upload PDS PDF
+router.post(
+  '/profile/pds',
+  [auth, authorize('applicant'), pdsUpload.single('pds')],
+  async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: 'No file uploaded' });
+      }
+      const user = await User.findById(req.user._id);
+      // Delete old PDS file if exists
+      if (user.pdsFile) {
+        const oldPdsPath = path.join(__dirname, '../../', user.pdsFile);
+        if (fs.existsSync(oldPdsPath)) {
+          fs.unlinkSync(oldPdsPath);
+        }
+      }
+      user.pdsFile = req.file.path;
+      await user.save();
+      res.json({ pdsFile: user.pdsFile });
+    } catch (error) {
+      if (req.file) {
+        fs.unlinkSync(req.file.path);
+      }
+      res
+        .status(500)
+        .json({ message: 'Error uploading PDS', error: error.message });
+    }
+  }
+);
+
 // Get all users (admin only)
 router.get('/', [auth, authorize('admin')], async (req, res) => {
   try {
@@ -187,7 +255,7 @@ router.get('/', [auth, authorize('admin')], async (req, res) => {
   }
 });
 
-// Get user by ID (admin only)
+// Get user by ID
 router.get(
   '/:id',
   [auth, authorize('admin', 'applicant')],
@@ -197,6 +265,12 @@ router.get(
       if (!user) {
         return res.status(404).json({ message: 'User not found' });
       }
+      // Ensure arrays are always present
+      user.experience = user.experience || [];
+      user.education = user.education || [];
+      user.certification = user.certification || [];
+
+      console.log('caleld');
       res.json(user);
     } catch (error) {
       res

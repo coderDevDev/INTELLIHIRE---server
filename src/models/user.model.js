@@ -30,7 +30,11 @@ const userSchema = new mongoose.Schema(
     },
     gender: String,
     dob: Date,
+    experience: { type: [Object], default: [] },
+    education: { type: [Object], default: [] },
+    certification: { type: [Object], default: [] },
     profilePicture: String,
+    pdsFile: String,
     isVerified: {
       type: Boolean,
       default: false
