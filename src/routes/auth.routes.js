@@ -20,11 +20,27 @@ router.post(
     body('email').isEmail().normalizeEmail(),
     body('password').isLength({ min: 6 }),
     body('role').isIn(['applicant', 'admin', 'employer']),
+    body('firstName').notEmpty(),
+    body('lastName').notEmpty(),
+    body('phone').notEmpty(),
+    body('address').notEmpty(),
+    body('gender').notEmpty(),
+    body('dob').notEmpty(),
     validate
   ],
   async (req, res) => {
     try {
-      const { email, password, role, firstName, lastName } = req.body;
+      const {
+        email,
+        password,
+        role,
+        firstName,
+        lastName,
+        phone,
+        address,
+        gender,
+        dob
+      } = req.body;
 
       // Check if user already exists
       const existingUser = await User.findOne({ email });
@@ -38,7 +54,11 @@ router.post(
         password,
         role,
         firstName,
-        lastName
+        lastName,
+        phoneNumber: phone,
+        address: { street: address },
+        gender,
+        dob: new Date(dob)
       });
 
       await user.save();
@@ -58,7 +78,11 @@ router.post(
           email: user.email,
           role: user.role,
           firstName: user.firstName,
-          lastName: user.lastName
+          lastName: user.lastName,
+          phoneNumber: user.phoneNumber,
+          address: user.address,
+          gender: user.gender,
+          dob: user.dob
         }
       });
     } catch (error) {

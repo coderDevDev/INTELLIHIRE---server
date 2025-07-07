@@ -71,12 +71,23 @@ router.put(
     body('lastName').optional().trim().isLength({ min: 2 }),
     body('phoneNumber').optional().trim(),
     body('address').optional().isObject(),
+    body('experience').optional().isArray(),
+    body('education').optional().isArray(),
+    body('certification').optional().isArray(),
     validate
   ],
   async (req, res) => {
     try {
       const updates = {};
-      const allowedFields = ['firstName', 'lastName', 'phoneNumber', 'address'];
+      const allowedFields = [
+        'firstName',
+        'lastName',
+        'phoneNumber',
+        'address',
+        'experience',
+        'education',
+        'certification'
+      ];
 
       allowedFields.forEach(field => {
         if (req.body[field] !== undefined) {
@@ -177,19 +188,23 @@ router.get('/', [auth, authorize('admin')], async (req, res) => {
 });
 
 // Get user by ID (admin only)
-router.get('/:id', [auth, authorize('admin')], async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id).select('-password');
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+router.get(
+  '/:id',
+  [auth, authorize('admin', 'applicant')],
+  async (req, res) => {
+    try {
+      const user = await User.findById(req.params.id).select('-password');
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      res.json(user);
+    } catch (error) {
+      res
+        .status(500)
+        .json({ message: 'Error fetching user', error: error.message });
     }
-    res.json(user);
-  } catch (error) {
-    res
-      .status(500)
-      .json({ message: 'Error fetching user', error: error.message });
   }
-});
+);
 
 // Update user (admin only)
 router.put(

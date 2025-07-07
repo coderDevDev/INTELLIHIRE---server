@@ -28,6 +28,8 @@ const userSchema = new mongoose.Schema(
       province: String,
       zipCode: String
     },
+    gender: String,
+    dob: Date,
     profilePicture: String,
     isVerified: {
       type: Boolean,
