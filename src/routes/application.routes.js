@@ -16,54 +16,58 @@ const validate = (req, res, next) => {
 };
 
 // Get all applications (admin/employer)
-router.get('/', [auth, authorize('admin', 'employer')], async (req, res) => {
-  try {
-    const {
-      jobId,
-      applicantId,
-      status,
-      page = 1,
-      limit = 10,
-      sort = '-createdAt'
-    } = req.query;
+router.get(
+  '/',
+  [auth, authorize('admin', 'employer', 'applicant')],
+  async (req, res) => {
+    try {
+      const {
+        jobId,
+        applicantId,
+        status,
+        page = 1,
+        limit = 10,
+        sort = '-createdAt'
+      } = req.query;
 
-    const query = {};
+      const query = {};
 
-    if (jobId) query.jobId = jobId;
-    if (applicantId) query.applicantId = applicantId;
-    if (status) query.status = status;
+      if (jobId) query.jobId = jobId;
+      if (applicantId) query.applicantId = applicantId;
+      if (status) query.status = status;
 
-    // If employer, only show applications for their company's jobs
-    if (req.user.role === 'employer') {
-      const jobs = await Job.find({ companyId: req.user.companyId }).select(
-        '_id'
-      );
-      query.jobId = { $in: jobs.map(job => job._id) };
+      // If employer, only show applications for their company's jobs
+      if (req.user.role === 'employer') {
+        const jobs = await Job.find({ companyId: req.user.companyId }).select(
+          '_id'
+        );
+        query.jobId = { $in: jobs.map(job => job._id) };
+      }
+
+      const applications = await Application.find(query)
+        .sort(sort)
+        .skip((page - 1) * limit)
+        .limit(parseInt(limit))
+        .populate('jobId', 'title companyId')
+        .populate('applicantId', 'firstName lastName email')
+        .populate('resumeId', 'title fileUrl')
+        .populate('pdsId', 'title fileUrl');
+
+      const total = await Application.countDocuments(query);
+
+      res.json({
+        applications,
+        totalPages: Math.ceil(total / limit),
+        currentPage: page,
+        total
+      });
+    } catch (error) {
+      res
+        .status(500)
+        .json({ message: 'Error fetching applications', error: error.message });
     }
-
-    const applications = await Application.find(query)
-      .sort(sort)
-      .skip((page - 1) * limit)
-      .limit(parseInt(limit))
-      .populate('jobId', 'title companyId')
-      .populate('applicantId', 'firstName lastName email')
-      .populate('resumeId', 'title fileUrl')
-      .populate('pdsId', 'title fileUrl');
-
-    const total = await Application.countDocuments(query);
-
-    res.json({
-      applications,
-      totalPages: Math.ceil(total / limit),
-      currentPage: page,
-      total
-    });
-  } catch (error) {
-    res
-      .status(500)
-      .json({ message: 'Error fetching applications', error: error.message });
   }
-});
+);
 
 // Get application by ID (admin/employer/applicant)
 router.get('/:id', auth, async (req, res) => {
@@ -125,9 +129,9 @@ router.post(
         expiryDate: { $gt: new Date() }
       });
 
-      if (!job) {
-        return res.status(400).json({ message: 'Job not found or not active' });
-      }
+      // if (!job) {
+      //   return res.status(400).json({ message: 'Job not found or not active' });
+      // }
 
       // Check if user has already applied
       const existingApplication = await Application.findOne({
@@ -153,16 +157,16 @@ router.post(
         userId: req.user._id
       });
 
-      if (
-        documents.length !==
-        [
-          req.body.resumeId,
-          req.body.pdsId,
-          ...(req.body.additionalDocuments || [])
-        ].length
-      ) {
-        return res.status(400).json({ message: 'Invalid document IDs' });
-      }
+      // if (
+      //   documents.length !==
+      //   [
+      //     req.body.resumeId,
+      //     req.body.pdsId,
+      //     ...(req.body.additionalDocuments || [])
+      //   ].length
+      // ) {
+      //   return res.status(400).json({ message: 'Invalid document IDs' });
+      // }
 
       const application = new Application({
         ...req.body,
@@ -312,6 +316,35 @@ router.post(
     } catch (error) {
       res.status(500).json({
         message: 'Error withdrawing application',
+        error: error.message
+      });
+    }
+  }
+);
+
+// Get current user's applications (applicant only)
+router.get(
+  '/list/my-applications',
+  [auth, authorize('applicant')],
+  async (req, res) => {
+    try {
+      const applications = await Application.find({ applicantId: req.user._id })
+        .sort('-createdAt')
+        .populate({
+          path: 'jobId',
+          select:
+            'title companyId location employmentType salaryMin salaryMax postedDate description',
+          populate: {
+            path: 'companyId',
+            select: 'name logo industry website description'
+          }
+        })
+        .populate('resumeId', 'title fileUrl')
+        .populate('pdsId', 'title fileUrl');
+      res.json({ applications });
+    } catch (error) {
+      res.status(500).json({
+        message: 'Error fetching your applications',
         error: error.message
       });
     }

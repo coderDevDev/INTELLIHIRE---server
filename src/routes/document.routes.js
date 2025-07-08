@@ -19,33 +19,11 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(
-      null,
-      file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname)
-    );
+    cb(null, 'doc-' + uniqueSuffix + path.extname(file.originalname));
   }
 });
 
-const upload = multer({
-  storage,
-  limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB limit
-  },
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = [
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    ];
-    if (allowedTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(
-        new Error('Invalid file type. Only PDF and Word documents are allowed.')
-      );
-    }
-  }
-});
+const upload = multer({ storage });
 
 // Middleware for validation
 const validate = (req, res, next) => {
@@ -57,72 +35,26 @@ const validate = (req, res, next) => {
 };
 
 // Upload document
-router.post(
-  '/upload',
-  [
-    auth,
-    upload.single('file'),
-    body('type').isIn([
-      'pds',
-      'resume',
-      'cv',
-      'cover-letter',
-      'certificate',
-      'other'
-    ]),
-    body('title').optional(),
-    validate
-  ],
-  async (req, res) => {
-    try {
-      if (!req.file) {
-        return res.status(400).json({ message: 'No file uploaded' });
-      }
-
-      const document = new Document({
-        userId: req.user._id,
-        type: req.body.type,
-        title: req.body.title || req.file.originalname,
-        fileUrl: req.file.path,
-        fileSize: req.file.size,
-        fileType: req.file.mimetype,
-        isDefault: req.body.isDefault === 'true'
-      });
-
-      // If this is set as default, unset other defaults of the same type
-      if (document.isDefault) {
-        await Document.updateMany(
-          { userId: req.user._id, type: document.type, isDefault: true },
-          { isDefault: false }
-        );
-      }
-
-      await document.save();
-
-      // If this is a PDS, parse it
-      if (document.type === 'pds') {
-        try {
-          const parsedData = await pdsParser.parsePDS(req.file.path);
-          document.parsedData = parsedData;
-          await document.save();
-        } catch (error) {
-          console.error('Error parsing PDS:', error);
-          // Don't fail the upload if parsing fails
-        }
-      }
-
-      res.status(201).json(document);
-    } catch (error) {
-      // Clean up uploaded file if document creation fails
-      if (req.file) {
-        fs.unlinkSync(req.file.path);
-      }
-      res
-        .status(500)
-        .json({ message: 'Error uploading document', error: error.message });
+router.post('/', [auth, upload.single('file')], async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
     }
+    // Save document info to DB, including type
+    const doc = new Document({
+      userId: req.user._id,
+      title: req.file.originalname,
+      fileUrl: req.file.path,
+      type: req.body.type
+    });
+    await doc.save();
+    res.status(201).json(doc);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: 'Error uploading document', error: error.message });
   }
-);
+});
 
 // Get user's documents
 router.get('/my-documents', auth, async (req, res) => {

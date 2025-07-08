@@ -6,6 +6,7 @@ const User = require('../models/user.model');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const PDSParser = require('../services/pds-parser.service');
 
 // Configure multer for profile picture uploads
 const storage = multer.diskStorage({
@@ -207,7 +208,17 @@ router.post(
       }
       user.pdsFile = req.file.path;
       await user.save();
-      res.json({ pdsFile: user.pdsFile });
+      // Parse the uploaded PDS PDF
+      const parser = new PDSParser(req.file.path);
+      let parsedData = null;
+      try {
+        parsedData = await parser.parse();
+      } catch (parseErr) {
+        return res
+          .status(200)
+          .json({ pdsFile: user.pdsFile, parseError: parseErr.message });
+      }
+      res.json({ pdsFile: user.pdsFile, parsed: parsedData });
     } catch (error) {
       if (req.file) {
         fs.unlinkSync(req.file.path);
