@@ -1,0 +1,266 @@
+{
+  "personalInformation": {
+    "firstName": "Mark Anthony",
+    "lastName": "",
+    "middleName": "Lopez",
+    "nameExtension": null,
+    "dateOfBirth": "1995-03-15",
+    "placeOfBirth": "Quezon City Philippines",
+    "sex": "Male",
+    "civilStatus": "Married",
+    "citizenship": {
+      "type": "Filipino",
+      "dualCitizenship": {
+        "by": null,
+        "country": null
+      }
+    },
+    "heightCm": 170,
+    "weightKg": 70,
+    "bloodType": null,
+    "gsisIdNo": 123456789,
+    "pagIbigIdNo": 987654321,
+    "philHealthNo": 321654987,
+    "sssNo": 1112223333,
+    "tin": 123456789,
+    "agencyEmployeeNo": 202045678,
+    "emailAddress": "markk323@gmail.com",
+    "mobileNo": 9171234567,
+    "telephoneNo": 29876543,
+    "residentialAddress": {
+      "houseBlockLotNo": 123,
+      "street": "Mabuhay Street",
+      "subdivisionVillage": null,
+      "barangay": null,
+      "cityMunicipality": "Quezon City",
+      "province": "Metro Manila",
+      "zipCode": 1101
+    },
+    "permanentAddress": {
+      "houseBlockLotNo": null,
+      "street": null,
+      "subdivisionVillage": null,
+      "barangay": null,
+      "cityMunicipality": "Quezon City",
+      "province": "Metro Manila",
+      "zipCode": 1101
+    },
+    "surname": "Gonzales"
+  },
+  "familyBackground": {
+    "spouse": {
+      "surname": "Garcia",
+      "firstName": "Ana",
+      "middleName": "Cruz",
+      "occupation": "Teacher",
+      "employerBusinessName": "Department of Education",
+      "businessAddress": "Quezon City, Metro Manila",
+      "telephoneNo": 29987654
+    },
+    "father": {
+      "surname": "Dela Cruz",
+      "firstName": "Pedro",
+      "middleName": "Santos",
+      "nameExtension": null
+    },
+    "motherMaidenName": {
+      "firstName": "",
+      "lastName": "",
+      "middleName": "",
+      "nameExtension": ""
+    },
+    "children": [
+      {
+        "fullName": null,
+        "dateOfBirth": "2010-12-05"
+      },
+      {
+        "fullName": null,
+        "dateOfBirth": "2013-08-09"
+      },
+      {
+        "fullName": null,
+        "dateOfBirth": "2016-01-13"
+      }
+    ],
+    "motherMaiden": {
+      "surname": "Cruz",
+      "firstName": "Maria",
+      "middleName": "Lopez"
+    }
+  },
+  "educationalBackground": [
+    {
+      "level": "Elementary",
+      "nameOfSchool": "Quezon City Elementary School",
+      "basicEducationDegreeCourse": "Elementary Education",
+      "periodOfAttendance": {
+        "from": null,
+        "to": null
+      },
+      "highestLevelUnitsEarned": "Completed",
+      "yearGraduated": 1997,
+      "scholarshipAcademicHonorsReceived": "N/A"
+    },
+    {
+      "level": "Secondary",
+      "nameOfSchool": "Quezon City High School",
+      "basicEducationDegreeCourse": "High School Education",
+      "periodOfAttendance": {
+        "from": null,
+        "to": null
+      },
+      "highestLevelUnitsEarned": "Completed",
+      "yearGraduated": 2001,
+      "scholarshipAcademicHonorsReceived": "with honors"
+    },
+    {
+      "level": "Vocational/Trade Course",
+      "nameOfSchool": "Tesda Training Center",
+      "basicEducationDegreeCourse": "Automotive Servicing NC II",
+      "periodOfAttendance": {
+        "from": null,
+        "to": null
+      },
+      "highestLevelUnitsEarned": "Completed",
+      "yearGraduated": null,
+      "scholarshipAcademicHonorsReceived": "N/A"
+    },
+    {
+      "level": "College",
+      "nameOfSchool": "University of the Philippines, Diliman",
+      "basicEducationDegreeCourse": "Bachelor of Science in Computer Science",
+      "periodOfAttendance": {
+        "from": null,
+        "to": null
+      },
+      "highestLevelUnitsEarned": "Completed",
+      "yearGraduated": 2006,
+      "scholarshipAcademicHonorsReceived": "N/A"
+    },
+    {
+      "level": "Graduate Studies",
+      "nameOfSchool": "Polytechnic University of the Philippines",
+      "basicEducationDegreeCourse": "Ph.D. Computer Science",
+      "periodOfAttendance": {
+        "from": null,
+        "to": null
+      },
+      "highestLevelUnitsEarned": "Completed",
+      "yearGraduated": 2014,
+      "scholarshipAcademicHonorsReceived": "N/A"
+    }
+  ],
+  "civilServiceEligibility": [
+    {
+      "careerServiceEligibility": "Certified Public Accountant",
+      "rating": null,
+      "dateOfExaminationOrConferment": "2006-08-08",
+      "placeOfExaminationOrConferment": "Manila",
+      "licenseNumber": null,
+      "licenseValidityDate": null
+    }
+  ],
+  "workExperience": [
+    {
+      "fromDate": "2001-01-03",
+      "toDate": "2002-07-04",
+      "positionTitle": "IT Specialist",
+      "departmentAgencyOfficeCompany": "ABC Corporation",
+      "monthlySalary": 45800,
+      "monthlySalaryCurrency": "PHP",
+      "salaryGradeStep": "18-1",
+      "statusOfAppointment": "Permanent",
+      "governmentService": false
+    },
+    {
+      "fromDate": "1999-01-06",
+      "toDate": "2018-01-02",
+      "positionTitle": "Web Developer",
+      "departmentAgencyOfficeCompany": "XYZ Technologies",
+      "monthlySalary": null,
+      "monthlySalaryCurrency": "PHP",
+      "salaryGradeStep": "15-1",
+      "statusOfAppointment": "Contractual",
+      "governmentService": false
+    },
+    {
+      "fromDate": "2005-01-04",
+      "toDate": "2009-01-05",
+      "positionTitle": "Junior Programmer",
+      "departmentAgencyOfficeCompany": "DEF Solutions",
+      "monthlySalary": 29000,
+      "monthlySalaryCurrency": "PHP",
+      "salaryGradeStep": "12-1",
+      "statusOfAppointment": "Probationary",
+      "governmentService": false
+    }
+  ],
+  "voluntaryWork": [
+    {
+      "organizationNameAndAddress": "Philippine Red Cross, Quezon City",
+      "fromDate": "2015-01-14",
+      "toDate": null,
+      "toDateText": "Present",
+      "numberOfHours": 100,
+      "hoursUnit": "hrs/year",
+      "positionNatureOfWork": "Volunteer"
+    },
+    {
+      "organizationNameAndAddress": "Gawad Kalinga, Manila",
+      "fromDate": "2018-01-06",
+      "toDate": "2020-01-12",
+      "numberOfHours": 50,
+      "hoursUnit": "hrs/year",
+      "positionNatureOfWork": "Volunteer Coordinator"
+    },
+    {
+      "organizationNameAndAddress": "Habitat for Humanity, Quezon City",
+      "fromDate": "2013-01-03",
+      "toDate": "2015-01-05",
+      "numberOfHours": 75,
+      "hoursUnit": "hrs/year",
+      "positionNatureOfWork": "Volunteer Builder"
+    }
+  ],
+  "trainings": [
+    {
+      "title": "Advanced Web Development",
+      "fromDate": "2022-06-15",
+      "toDate": "2022-06-30",
+      "numberOfHours": 40,
+      "type": "Technical",
+      "conductedSponsoredBy": "Tech Academy PH"
+    },
+    {
+      "title": "Leadership and Management Training",
+      "fromDate": "2021-05-12",
+      "toDate": "2021-07-22",
+      "numberOfHours": 24,
+      "type": "Managerial",
+      "conductedSponsoredBy": "Philippine Management Institute"
+    },
+    {
+      "title": "Project Management for IT Professionals",
+      "fromDate": "2020-01-12",
+      "toDate": "2020-03-01",
+      "numberOfHours": 32,
+      "type": "Supervisory",
+      "conductedSponsoredBy": "Project Management Institute"
+    },
+    {
+      "title": "Data Science And Analytics Workshop",
+      "fromDate": "2020-01-02",
+      "toDate": "2020-02-12",
+      "numberOfHours": 24,
+      "type": "Technical",
+      "conductedSponsoredBy": "National IT Society"
+    }
+  ],
+  "skills": [
+    "Financial reporting and analysis"
+  ],
+  "recognitions": [],
+  "memberships": [],
+  "references": []
+}

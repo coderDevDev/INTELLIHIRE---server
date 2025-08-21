@@ -48,7 +48,11 @@ router.get(
         .sort(sort)
         .skip((page - 1) * limit)
         .limit(parseInt(limit))
-        .populate('jobId', 'title companyId')
+        .populate(
+          'jobId',
+          'title companyId location employmentType salaryMin salaryMax'
+        )
+        .populate('jobId.companyId', 'name logo industry website')
         .populate('applicantId', 'firstName lastName email')
         .populate('resumeId', 'title fileUrl')
         .populate('pdsId', 'title fileUrl');
@@ -73,7 +77,11 @@ router.get(
 router.get('/:id', auth, async (req, res) => {
   try {
     const application = await Application.findById(req.params.id)
-      .populate('jobId', 'title companyId')
+      .populate(
+        'jobId',
+        'title companyId location employmentType salaryMin salaryMax'
+      )
+      .populate('jobId.companyId', 'name logo industry website')
       .populate('applicantId', 'firstName lastName email')
       .populate('resumeId', 'title fileUrl')
       .populate('pdsId', 'title fileUrl')

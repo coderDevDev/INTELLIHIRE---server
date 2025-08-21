@@ -1,6 +1,9 @@
 const fs = require('fs');
 const path = require('path');
 const PDFParser = require('pdf2json');
+
+// https://cloud.llamaindex.ai/project/ce6bc9ed-46e0-4bad-831b-11d5839f792f/extraction/1db8b3ec-6b00-4915-9b28-3415021b4654?job_id=5e17a08d-dcb6-4b31-b4de-0d327cd3b2a4&run_id=c2afbf15-76de-49fa-8a8c-02c1e3c10516
+
 const parsePDF = filePath => {
   return new Promise((resolve, reject) => {
     const pdfParser = new PDFParser();
@@ -77,21 +80,21 @@ const groupKeyValuePairs = textElements => {
   return keyValuePairs;
 };
 
-// 🔍 Load and parse your uploaded file
-(async () => {
-  const filePath = path.join(
-    'C:\\Users\\ACER\\Desktop\\2025 Capstone Project\\INTELLIHIRE',
-    'CS_Form_No._212_Revised-2017_Personal-Data-Sheet_4.pdf'
-  );
+// // 🔍 Load and parse your uploaded file
+// (async () => {
+//   const filePath = path.join(
+//     'C:\\Users\\ACER\\Desktop\\2025 Capstone Project\\INTELLIHIRE',
+//     'CS_Form_No._212_Revised-2017_Personal-Data-Sheet_4.pdf'
+//   );
 
-  try {
-    console.log({ filePath });
-    const textElements = await extractTextWithPdf2json(filePath);
-    const keyValues = groupKeyValuePairs(textElements);
+//   try {
+//     console.log({ filePath });
+//     const textElements = await extractTextWithPdf2json(filePath);
+//     const keyValues = groupKeyValuePairs(textElements);
 
-    console.log('Extracted Key-Value Pairs:');
-    console.log(keyValues);
-  } catch (err) {
-    console.error('Error parsing PDF:', err);
-  }
-})();
+//     console.log('Extracted Key-Value Pairs:');
+//     console.log(keyValues);
+//   } catch (err) {
+//     console.error('Error parsing PDF:', err);
+//   }
+// })();

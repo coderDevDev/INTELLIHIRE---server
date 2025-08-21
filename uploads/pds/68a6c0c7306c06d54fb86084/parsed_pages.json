@@ -1,0 +1,382 @@
+[
+  {
+    "personalInformation": {
+      "surname": "Gonzales",
+      "firstName": "Mark Anthony",
+      "middleName": "Lopez",
+      "nameExtension": null,
+      "dateOfBirth": "1995-03-15",
+      "placeOfBirth": "Quezon City Philippines",
+      "sex": "Male",
+      "civilStatus": "Single",
+      "heightCm": 170,
+      "weightKg": 70,
+      "bloodType": "O",
+      "citizenship": {
+        "type": "Filipino",
+        "dualBy": null,
+        "country": null
+      },
+      "identificationNumbers": {
+        "gsisIdNo": "123456789",
+        "pagIbigIdNo": "987654321",
+        "philHealthNo": "321654987",
+        "sssNo": "111-222-3333",
+        "tinNo": "123-456-789",
+        "agencyEmployeeNo": 202045678
+      },
+      "residentialAddress": {
+        "houseBlockLotNo": "123",
+        "street": "Mabuhay Street",
+        "subdivisionVillage": "N/A",
+        "barangayDistrict": "Barangay Central",
+        "cityMunicipality": "Quezon City",
+        "province": "Metro Manila",
+        "zipCode": 1101
+      },
+      "permanentAddress": {
+        "houseBlockLotNo": "123",
+        "street": "Mabuhay Street",
+        "subdivisionVillage": "N/A",
+        "barangayDistrict": "Barangay Central",
+        "cityMunicipality": "Quezon City",
+        "province": "Metro Manila",
+        "zipCode": 1101
+      },
+      "contactInformation": {
+        "telephoneNo": "(02) 987-6543",
+        "mobileNo": "0917-123-4567",
+        "emailAddress": "markk323@gmail.com"
+      }
+    },
+    "familyBackground": {
+      "spouse": {
+        "surname": "Garcia",
+        "firstName": "Ana",
+        "middleName": "Cruz",
+        "nameExtension": null,
+        "occupation": "Teacher",
+        "employerBusinessName": "Department of Education",
+        "businessAddress": "Quezon City, Metro Manila",
+        "telephoneNo": "(02) 998-7654"
+      },
+      "children": [
+        {
+          "name": null,
+          "dateOfBirth": "2010-12-05"
+        },
+        {
+          "name": null,
+          "dateOfBirth": "2013-08-09"
+        },
+        {
+          "name": null,
+          "dateOfBirth": "2016-01-18"
+        }
+      ],
+      "father": {
+        "surname": "Dela Cruz",
+        "firstName": "Pedro",
+        "middleName": "Santos",
+        "nameExtension": null
+      },
+      "motherMaidenName": {
+        "surname": "Cruz",
+        "firstName": "Maria",
+        "middleName": "Lopez"
+      }
+    },
+    "educationalBackground": [
+      {
+        "level": "Elementary",
+        "nameOfSchool": "Quezon City Elementary School",
+        "basicEducationDegreeCourse": "Elementary Education",
+        "periodOfAttendance": {
+          "from": "1991-07-01",
+          "to": "1997-03-01"
+        },
+        "highestLevelUnitsEarned": "Completed",
+        "yearGraduated": 1997,
+        "scholarshipAcademicHonorsReceived": "N/A"
+      },
+      {
+        "level": "Secondary",
+        "nameOfSchool": "Quezon City High School",
+        "basicEducationDegreeCourse": "High School Education",
+        "periodOfAttendance": {
+          "from": "1997-07-01",
+          "to": "2001-03-01"
+        },
+        "highestLevelUnitsEarned": "Completed",
+        "yearGraduated": 2001,
+        "scholarshipAcademicHonorsReceived": "with honors"
+      },
+      {
+        "level": "Vocational/Trade Course",
+        "nameOfSchool": "Tesda Training Center",
+        "basicEducationDegreeCourse": "Automotive Servicing NC II",
+        "periodOfAttendance": {
+          "from": "2004-07-01",
+          "to": "2005-12-01"
+        },
+        "highestLevelUnitsEarned": "Completed",
+        "yearGraduated": 2005,
+        "scholarshipAcademicHonorsReceived": "N/A"
+      },
+      {
+        "level": "College",
+        "nameOfSchool": "University of the Philippines, Diliman",
+        "basicEducationDegreeCourse": "Bachelor of Science in Computer Science",
+        "periodOfAttendance": {
+          "from": "2007-06-01",
+          "to": "2011-03-01"
+        },
+        "highestLevelUnitsEarned": "Completed",
+        "yearGraduated": 2011,
+        "scholarshipAcademicHonorsReceived": "N/A"
+      },
+      {
+        "level": "Graduate Studies",
+        "nameOfSchool": "Polytechnic University of the Philippines",
+        "basicEducationDegreeCourse": "Ph.D. Computer Science",
+        "periodOfAttendance": {
+          "from": "2008-01-01",
+          "to": "2014-01-01"
+        },
+        "highestLevelUnitsEarned": "Completed",
+        "yearGraduated": 2014,
+        "scholarshipAcademicHonorsReceived": "N/A"
+      }
+    ],
+    "civilServiceEligibility": [],
+    "workExperience": [],
+    "voluntaryWork": [],
+    "trainings": [],
+    "skills": [],
+    "references": []
+  },
+  {
+    "personalInformation": null,
+    "familyBackground": null,
+    "educationalBackground": [],
+    "civilServiceEligibility": [
+      {
+        "careerServiceOrEligibility": "Certified Public Accountant",
+        "rating": null,
+        "dateOfExaminationOrConferment": "2006-08-08",
+        "placeOfExaminationOrConferment": "Manila",
+        "licenseNumber": null,
+        "licenseValidityDate": null
+      }
+    ],
+    "workExperience": [
+      {
+        "from": "2001-01-03",
+        "to": "2002-07-24",
+        "positionTitle": "IT Specialist",
+        "departmentAgencyOfficeCompany": "ABC Corporation",
+        "monthlySalary": {
+          "amount": 45000,
+          "currency": "PHP"
+        },
+        "salaryJobPayGradeStep": "18-1",
+        "statusOfAppointment": "Permanent",
+        "governmentService": false
+      },
+      {
+        "from": "1999-01-06",
+        "to": "2018-01-02",
+        "positionTitle": "Web Developer",
+        "departmentAgencyOfficeCompany": "XYZ Technologies",
+        "monthlySalary": {
+          "amount": 35000,
+          "currency": "PHP"
+        },
+        "salaryJobPayGradeStep": "15-1",
+        "statusOfAppointment": "Contractual",
+        "governmentService": false
+      },
+      {
+        "from": "2005-01-04",
+        "to": "2009-01-05",
+        "positionTitle": "Junior Programmer",
+        "departmentAgencyOfficeCompany": "DEF Solutions",
+        "monthlySalary": {
+          "amount": 25000,
+          "currency": "PHP"
+        },
+        "salaryJobPayGradeStep": "12-1",
+        "statusOfAppointment": "Probationary",
+        "governmentService": false
+      }
+    ],
+    "voluntaryWork": [],
+    "trainings": [],
+    "skills": [],
+    "references": [],
+    "signatures": {
+      "signature": null,
+      "date": null
+    }
+  },
+  {
+    "personalInformation": null,
+    "familyBackground": null,
+    "educationalBackground": null,
+    "civilServiceEligibility": null,
+    "workExperience": [],
+    "voluntaryWork": [
+      {
+        "organization": "Philippine Red Cross, Quezon City",
+        "inclusiveDates": {
+          "from": "2015-01-14",
+          "to": null,
+          "toDateNote": "Present"
+        },
+        "numberOfHours": 100,
+        "hoursDetail": "100 Hrs/year",
+        "positionNatureOfWork": "Volunteer"
+      },
+      {
+        "organization": "Gawad Kalinga, Manila",
+        "inclusiveDates": {
+          "from": "2018-01-06",
+          "to": "2020-01-12"
+        },
+        "numberOfHours": 50,
+        "hoursDetail": "50 Hrs/year",
+        "positionNatureOfWork": "Volunteer Coordinator"
+      },
+      {
+        "organization": "Habitat for Humanity, Quezon City",
+        "inclusiveDates": {
+          "from": "2013-01-03",
+          "to": "2015-01-05"
+        },
+        "numberOfHours": 75,
+        "hoursDetail": "75 Hrs/year",
+        "positionNatureOfWork": "Volunteer Builder"
+      }
+    ],
+    "trainings": [
+      {
+        "title": "Advanced Web Development",
+        "inclusiveDates": {
+          "from": "2022-06-15",
+          "to": "2022-06-30"
+        },
+        "numberOfHours": 24,
+        "hoursDetail": "24 hours",
+        "typeOfLd": "Technical",
+        "conductedSponsoredBy": "Tech Academy PH"
+      },
+      {
+        "title": "Leadership and Management Training",
+        "inclusiveDates": {
+          "from": "2021-07-15",
+          "to": "2021-07-22"
+        },
+        "numberOfHours": 24,
+        "hoursDetail": "24 hours",
+        "typeOfLd": "Managerial",
+        "conductedSponsoredBy": "Philippine Management Institute"
+      },
+      {
+        "title": "Project Management for IT Professionals",
+        "inclusiveDates": {
+          "from": "2019-03-15",
+          "to": "2019-03-22"
+        },
+        "numberOfHours": 32,
+        "hoursDetail": "32 hours",
+        "typeOfLd": "Supervisory",
+        "conductedSponsoredBy": "Project Management Institute"
+      },
+      {
+        "title": "Data Science and Analytics Workshop",
+        "inclusiveDates": {
+          "from": "2020-01-20",
+          "to": "2020-01-28"
+        },
+        "numberOfHours": 24,
+        "hoursDetail": "24 hours",
+        "typeOfLd": "Technical",
+        "conductedSponsoredBy": "National IT Society"
+      }
+    ],
+    "skills": [
+      "Financial reporting and analysis"
+    ],
+    "otherInformation": {
+      "nonAcademicDistinctionsRecognition": [
+        "Employee of the Year (2019)"
+      ],
+      "membershipInAssociationOrganization": []
+    },
+    "references": []
+  },
+  {
+    "personalInformation": null,
+    "familyBackground": null,
+    "educationalBackground": null,
+    "civilServiceEligibility": [],
+    "workExperience": [],
+    "voluntaryWork": [],
+    "trainings": [],
+    "skills": [],
+    "questions": {
+      "item34": {
+        "relatedWithinThirdDegree": null,
+        "detailsWithinThirdDegree": null,
+        "relatedWithinFourthDegreeForLGUCareerEmployees": null,
+        "detailsWithinFourthDegree": null
+      },
+      "item35": {
+        "administrativeOffense": null,
+        "administrativeOffenseDetails": null,
+        "criminallyCharged": null,
+        "criminalChargeDetails": null,
+        "criminalChargeDateFiled": null,
+        "criminalCaseStatus": null
+      },
+      "item36": {
+        "convictedOfCrimeOrViolation": null,
+        "convictionDetails": null
+      },
+      "item37": {
+        "separatedFromService": null,
+        "separationDetails": null
+      },
+      "item38": {
+        "candidateInElectionWithinLastYearExceptBarangay": null,
+        "candidateDetails": null,
+        "resignedToCampaignWithinThreeMonthsBeforeLastElection": null,
+        "resignationDetails": null,
+        "immigrantOrPermanentResidentOfAnotherCountry": null,
+        "countryIfImmigrantOrPR": null
+      },
+      "item40": {
+        "memberOfIndigenousGroup": null,
+        "indigenousGroup": null,
+        "personWithDisability": null,
+        "pwdIdNo": null,
+        "soloParent": null,
+        "soloParentIdNo": null
+      }
+    },
+    "references": [],
+    "declaration": {
+      "governmentIssuedId": {
+        "idType": null,
+        "idNumber": null,
+        "dateOfIssuance": null,
+        "placeOfIssuance": null
+      },
+      "signature": null,
+      "dateAccomplished": null,
+      "rightThumbmark": null,
+      "subscribedAndSwornBeforeMeDate": null,
+      "personAdministeringOath": null
+    }
+  }
+]

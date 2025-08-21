@@ -1,0 +1,346 @@
+{
+  "personalInformation": {
+    "surname": "Gonzales",
+    "firstName": "Mark Anthony",
+    "middleName": "Lopez",
+    "nameExtension": null,
+    "dateOfBirth": "1995-03-15",
+    "placeOfBirth": "Quezon City Philippines",
+    "sex": "Male",
+    "civilStatus": "Single",
+    "height": 170,
+    "weight": 70,
+    "bloodType": "O+",
+    "citizenship": {
+      "type": "Filipino",
+      "isDualCitizenship": false,
+      "dualCitizenshipAcquisition": null,
+      "dualCitizenshipCountry": null
+    },
+    "identificationNumbers": {
+      "gsisIdNo": 123456789,
+      "pagIbigIdNo": 987654321,
+      "philHealthNo": 321654987,
+      "sssNo": 1112223333,
+      "tinNo": 123456789,
+      "agencyEmployeeNo": 202045678
+    },
+    "residentialAddress": {
+      "houseBlockLotNo": "123",
+      "street": "Mabuhay Street",
+      "subdivisionVillage": "Sunshine Village",
+      "barangay": "Barangay Central",
+      "cityMunicipality": "Quezon City",
+      "province": "Metro Manila",
+      "zipCode": 1101
+    },
+    "permanentAddress": {
+      "houseBlockLotNo": "456",
+      "street": "Bayani Road",
+      "subdivisionVillage": "Unity Subdivision",
+      "barangay": "Barangay Masipag",
+      "cityMunicipality": "Quezon City",
+      "province": "Metro Manila",
+      "zipCode": 1102
+    },
+    "contactInformation": {
+      "telephoneNo": "(02) 987-6543",
+      "mobileNo": "0917-123-4567",
+      "emailAddress": "markk323@gmail.com"
+    }
+  },
+  "familyBackground": {
+    "spouse": {
+      "surname": "Garcia",
+      "firstName": "Ana",
+      "middleName": "Cruz",
+      "nameExtension": null,
+      "occupation": "Teacher",
+      "employerBusinessName": "Department of Education",
+      "businessAddress": "Quezon City, Metro Manila",
+      "telephoneNo": "(02) 998-7654"
+    },
+    "children": [
+      {
+        "fullName": null,
+        "dateOfBirth": "2010-12-05"
+      },
+      {
+        "fullName": null,
+        "dateOfBirth": "2013-08-20"
+      },
+      {
+        "fullName": null,
+        "dateOfBirth": "2016-09-18"
+      }
+    ],
+    "father": {
+      "surname": "Dela Cruz",
+      "firstName": "Pedro",
+      "middleName": "Santos",
+      "nameExtension": null
+    },
+    "motherMaidenName": {
+      "surname": "Cruz",
+      "firstName": "Maria",
+      "middleName": "Lopez",
+      "nameExtension": null
+    }
+  },
+  "educationalBackground": [
+    {
+      "level": "Elementary",
+      "nameOfSchool": "Quezon City Elementary School",
+      "basicEducationDegreeCourse": "Elementary Education",
+      "periodOfAttendance": {
+        "from": "1991-01-07",
+        "to": "1997-01-06"
+      },
+      "highestLevelUnitsEarned": "Completed",
+      "yearGraduated": 1997,
+      "scholarshipAcademicHonors": "N/A"
+    },
+    {
+      "level": "Secondary",
+      "nameOfSchool": "Quezon City High School",
+      "basicEducationDegreeCourse": "High School Education",
+      "periodOfAttendance": {
+        "from": "1997-01-07",
+        "to": "2001-01-03"
+      },
+      "highestLevelUnitsEarned": "Completed",
+      "yearGraduated": 2001,
+      "scholarshipAcademicHonors": "with honors"
+    },
+    {
+      "level": "Vocational/Trade Course",
+      "nameOfSchool": "Tesda Training Center",
+      "basicEducationDegreeCourse": "Automotive Servicing NC II",
+      "periodOfAttendance": {
+        "from": "2002-01-07",
+        "to": "2006-01-09"
+      },
+      "highestLevelUnitsEarned": "Completed",
+      "yearGraduated": 2006,
+      "scholarshipAcademicHonors": "N/A"
+    },
+    {
+      "level": "College",
+      "nameOfSchool": "University of the Philippines, Diliman",
+      "basicEducationDegreeCourse": "Bachelor of Science in Computer Science",
+      "periodOfAttendance": {
+        "from": "2002-06-01",
+        "to": "2006-05-01"
+      },
+      "highestLevelUnitsEarned": "Completed",
+      "yearGraduated": 2006,
+      "scholarshipAcademicHonors": "N/A"
+    },
+    {
+      "level": "Graduate Studies",
+      "nameOfSchool": "Polytechnic University of the Philippines",
+      "basicEducationDegreeCourse": "Ph.D Computer Science",
+      "periodOfAttendance": {
+        "from": "2008-01-07",
+        "to": "2014-01-04"
+      },
+      "highestLevelUnitsEarned": "Completed",
+      "yearGraduated": 2014,
+      "scholarshipAcademicHonors": "N/A"
+    }
+  ],
+  "civilServiceEligibility": [
+    {
+      "careerService": "Certified Public Accountant",
+      "rating": null,
+      "dateOfExamConferment": "2006-08-08",
+      "placeOfExaminationConferment": "Manila",
+      "licenseNumber": null,
+      "licenseDateOfValidity": null
+    }
+  ],
+  "workExperience": [
+    {
+      "from": "2001-01-03",
+      "to": "2002-07-04",
+      "positionTitle": "IT Specialist",
+      "departmentAgencyOfficeCompany": "ABC Corporation",
+      "monthlySalary": 45000,
+      "monthlySalaryCurrency": "PHP",
+      "salaryGradeStep": "18-1",
+      "statusOfAppointment": "Permanent",
+      "governmentService": "N"
+    },
+    {
+      "from": "2009-01-06",
+      "to": "2018-01-02",
+      "positionTitle": "Web Developer",
+      "departmentAgencyOfficeCompany": "XYZ Technologies",
+      "monthlySalary": 35000,
+      "monthlySalaryCurrency": "PHP",
+      "salaryGradeStep": "15-1",
+      "statusOfAppointment": "Contractual",
+      "governmentService": "N"
+    },
+    {
+      "from": "2005-01-04",
+      "to": "2009-01-05",
+      "positionTitle": "Junior Programmer",
+      "departmentAgencyOfficeCompany": "DEF Solutions",
+      "monthlySalary": 25000,
+      "monthlySalaryCurrency": "PHP",
+      "salaryGradeStep": "12-1",
+      "statusOfAppointment": "Probationary",
+      "governmentService": "N"
+    }
+  ],
+  "voluntaryWork": [
+    {
+      "nameAndAddressOfOrganization": "Philippine Red Cross, Quezon City",
+      "inclusiveDates": {
+        "from": "2015-01-14",
+        "to": null,
+        "toText": "Present"
+      },
+      "numberOfHoursRaw": "100 hrs/year",
+      "hoursPerYear": 100,
+      "positionNatureOfWork": "Volunteer"
+    },
+    {
+      "nameAndAddressOfOrganization": "Gawad Kalinga, Manila",
+      "inclusiveDates": {
+        "from": "2018-01-06",
+        "to": "2020-01-12"
+      },
+      "numberOfHoursRaw": "50 hrs/year",
+      "hoursPerYear": 50,
+      "positionNatureOfWork": "Volunteer Coordinator"
+    },
+    {
+      "nameAndAddressOfOrganization": "Habitat for Humanity, Quezon City",
+      "inclusiveDates": {
+        "from": "2013-01-03",
+        "to": "2015-01-05"
+      },
+      "numberOfHoursRaw": "75 hrs/year",
+      "hoursPerYear": 75,
+      "positionNatureOfWork": "Volunteer Builder"
+    }
+  ],
+  "trainings": [
+    {
+      "title": "Advanced Web Development",
+      "inclusiveDates": {
+        "from": "2022-06-15",
+        "to": "2022-06-30"
+      },
+      "numberOfHoursRaw": "24 hours",
+      "numberOfHours": 24,
+      "typeOfLd": "Technical",
+      "conductedSponsoredBy": "Tech Academy PH"
+    },
+    {
+      "title": "Leadership and Management Training",
+      "inclusiveDates": {
+        "from": "2021-07-08",
+        "to": "2021-07-22"
+      },
+      "numberOfHoursRaw": "24 hours",
+      "numberOfHours": 24,
+      "typeOfLd": "Managerial",
+      "conductedSponsoredBy": "Philippine Management Institute"
+    },
+    {
+      "title": "Project Management for IT Professionals",
+      "inclusiveDates": {
+        "from": "2020-01-04",
+        "to": "2020-01-18"
+      },
+      "numberOfHoursRaw": "24 hours",
+      "numberOfHours": 24,
+      "typeOfLd": "Supervisory",
+      "conductedSponsoredBy": "Project Management Institute"
+    },
+    {
+      "title": "Data Science And Analytics Workshop",
+      "inclusiveDates": {
+        "from": "2020-01-20",
+        "to": "2020-02-18"
+      },
+      "numberOfHoursRaw": "24 hours",
+      "numberOfHours": 24,
+      "typeOfLd": "Technical",
+      "conductedSponsoredBy": "National IT Society"
+    }
+  ],
+  "skills": [],
+  "references": [],
+  "declaration": {
+    "signature": null,
+    "date": null
+  },
+  "otherInformation": {
+    "relationshipToAppointingAuthority": {
+      "withinThirdDegree": null,
+      "thirdDegreeDetails": null,
+      "withinFourthDegree": null,
+      "fourthDegreeDetails": null
+    },
+    "administrativeOffense": {
+      "foundGuilty": null,
+      "details": null
+    },
+    "criminalCharge": {
+      "charged": null,
+      "details": null,
+      "dateFiled": null,
+      "statusOfCases": null
+    },
+    "convictedOfCrime": {
+      "convicted": null,
+      "details": null
+    },
+    "separatedFromService": {
+      "separated": null,
+      "details": null
+    },
+    "electionParticipation": {
+      "candidateInElectionWithinLastYearExceptBarangay": null,
+      "candidateDetails": null,
+      "resignedToCampaignWithinThreeMonthsBeforeLastElection": null,
+      "resignationDetails": null
+    },
+    "immigrantOrPermanentResident": {
+      "hasImmigrantOrPermanentResidentStatusInAnotherCountry": null,
+      "country": null
+    },
+    "specialStatutesDisclosures": {
+      "indigenousGroupMember": null,
+      "indigenousGroupDetails": null,
+      "personWithDisability": null,
+      "disabilityDetails": null,
+      "disabilityIdNo": null,
+      "soloParent": null,
+      "soloParentIdNo": null
+    }
+  },
+  "governmentIssuedId": {
+    "idType": null,
+    "idNumber": null,
+    "dateOfIssuance": null,
+    "placeOfIssuance": null
+  },
+  "oathDeclaration": {
+    "declarationText": "I declare under oath that I have personally accomplished this Personal Data Sheet which is a true, correct and complete statement pursuant to the provisions of pertinent laws, rules and regulations of the Republic of the Philippines. I authorize the agency head/authorized representative to verify/validate the contents stated herein. I agree that any misrepresentation made in this document and its attachments shall cause the filing of administrative/criminal cases against me.",
+    "signature": null,
+    "dateAccomplished": null,
+    "rightThumbmark": null,
+    "subscribedAndSwornDate": null,
+    "personAdministeringOath": null
+  },
+  "pageMetadata": {
+    "formName": "CS FORM 212 (Revised 2017)",
+    "pageNumber": 4,
+    "totalPages": 4
+  }
+}
