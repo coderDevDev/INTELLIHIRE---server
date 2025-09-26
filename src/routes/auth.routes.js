@@ -3,6 +3,7 @@ const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user.model');
+const emailService = require('../services/email.service');
 
 // Middleware for validation
 const validate = (req, res, next) => {
@@ -69,6 +70,11 @@ router.post(
         process.env.JWT_SECRET || 'your-secret-key',
         { expiresIn: '24h' }
       );
+
+      // Send welcome email (async, don't wait for it)
+      emailService.sendWelcome(email, firstName).catch(error => {
+        console.error('Failed to send welcome email:', error.message);
+      });
 
       res.status(201).json({
         message: 'User registered successfully',
@@ -145,6 +151,101 @@ router.post(
       res
         .status(500)
         .json({ message: 'Error logging in', error: error.message });
+    }
+  }
+);
+
+// Forgot password
+router.post(
+  '/forgot-password',
+  [body('email').isEmail().normalizeEmail(), validate],
+  async (req, res) => {
+    try {
+      const { email } = req.body;
+
+      // Find user
+      const user = await User.findOne({ email });
+      if (!user) {
+        return res
+          .status(404)
+          .json({ message: 'User not found with this email address' });
+      }
+
+      // Generate reset token
+      const resetToken = jwt.sign(
+        { userId: user._id, email: user.email },
+        process.env.JWT_SECRET || 'your-secret-key',
+        { expiresIn: '1h' }
+      );
+
+      // Send password reset email
+      const emailResult = await emailService.sendPasswordReset(
+        email,
+        resetToken
+      );
+
+      if (!emailResult.success) {
+        return res.status(500).json({
+          message: 'Failed to send reset email',
+          error: emailResult.error
+        });
+      }
+
+      res.json({
+        message: 'Password reset email sent successfully',
+        // In development, include the token for testing
+        ...(process.env.NODE_ENV === 'development' && { resetToken })
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: 'Error processing forgot password request',
+        error: error.message
+      });
+    }
+  }
+);
+
+// Reset password
+router.post(
+  '/reset-password',
+  [body('token').notEmpty(), body('password').isLength({ min: 6 }), validate],
+  async (req, res) => {
+    try {
+      const { token, password } = req.body;
+
+      // Verify token
+      const decoded = jwt.verify(
+        token,
+        process.env.JWT_SECRET || 'your-secret-key'
+      );
+
+      // Find user
+      const user = await User.findById(decoded.userId);
+      if (!user) {
+        return res
+          .status(404)
+          .json({ message: 'Invalid or expired reset token' });
+      }
+
+      // Update password
+      user.password = password;
+      await user.save();
+
+      res.json({
+        message: 'Password reset successfully'
+      });
+    } catch (error) {
+      if (
+        error.name === 'JsonWebTokenError' ||
+        error.name === 'TokenExpiredError'
+      ) {
+        return res
+          .status(400)
+          .json({ message: 'Invalid or expired reset token' });
+      }
+      res
+        .status(500)
+        .json({ message: 'Error resetting password', error: error.message });
     }
   }
 );

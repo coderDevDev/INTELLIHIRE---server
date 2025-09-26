@@ -35,6 +35,23 @@ const userSchema = new mongoose.Schema(
     certification: { type: [Object], default: [] },
     profilePicture: String,
     pdsFile: String,
+    savedJobs: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Job' }],
+    activeCareerPaths: [
+      { type: mongoose.Schema.Types.ObjectId, ref: 'CareerPath' }
+    ],
+    completedMilestones: [{ type: mongoose.Schema.Types.ObjectId }],
+    careerInterests: [String],
+    preferences: {
+      employmentType: String,
+      workEnvironment: String,
+      salaryRange: {
+        min: Number,
+        max: Number,
+        currency: String
+      },
+      careerInterests: [String],
+      skillsToDevelop: [String]
+    },
     isVerified: {
       type: Boolean,
       default: false

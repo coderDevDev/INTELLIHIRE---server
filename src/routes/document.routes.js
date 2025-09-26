@@ -8,6 +8,12 @@ const path = require('path');
 const fs = require('fs');
 const pdsParser = require('../services/pds-parser.service');
 const PdsExtractedData = require('../models/pdsExtractedData.model');
+const Resume = require('../models/resume.model');
+const {
+  generateResumeFromPds,
+  generateResumeVariants,
+  optimizeResumeForJob
+} = require('../services/resume-generator.service');
 
 /**
  * PDS Data Processing Pipeline:
@@ -182,61 +188,290 @@ const normalizePdsStructure = data => {
   };
 
   // Map the cleaned data to the normalized structure
-  if (data.personalInformation) {
-    Object.assign(normalized.personalInformation, data.personalInformation);
-  }
-  if (data.familyBackground) {
-    Object.assign(normalized.familyBackground, data.familyBackground);
-  }
-  if (Array.isArray(data.educationalBackground)) {
-    normalized.educationalBackground = data.educationalBackground;
-  }
-  if (Array.isArray(data.civilServiceEligibility)) {
-    normalized.civilServiceEligibility = data.civilServiceEligibility;
-  }
-  if (Array.isArray(data.workExperience)) {
-    normalized.workExperience = data.workExperience;
-  }
-  if (Array.isArray(data.voluntaryWork)) {
-    normalized.voluntaryWork = data.voluntaryWork;
-  }
-  if (Array.isArray(data.trainings)) {
-    normalized.trainings = data.trainings;
-  }
-  if (Array.isArray(data.skills)) {
-    normalized.skills = data.skills;
-  }
-  if (Array.isArray(data.recognitions)) {
-    normalized.recognitions = data.recognitions;
-  }
-  if (Array.isArray(data.memberships)) {
-    normalized.memberships = data.memberships;
-  }
-  if (Array.isArray(data.references)) {
-    normalized.references = data.references;
+  // Handle both snake_case (from Gemini) and camelCase (legacy) field names
+
+  // Personal Information mapping
+  const personalData =
+    data.personal_information || data.personalInformation || data.personalInfo;
+  if (personalData) {
+    normalized.personalInformation.firstName =
+      personalData.first_name || personalData.firstName || '';
+    normalized.personalInformation.lastName =
+      personalData.surname || personalData.lastName || '';
+    normalized.personalInformation.middleName =
+      personalData.middle_name || personalData.middleName || '';
+    normalized.personalInformation.dateOfBirth =
+      personalData.date_of_birth || personalData.dateOfBirth || '';
+    normalized.personalInformation.placeOfBirth =
+      personalData.place_of_birth || personalData.placeOfBirth || '';
+    normalized.personalInformation.sex = personalData.sex || '';
+    normalized.personalInformation.civilStatus =
+      personalData.civil_status || personalData.civilStatus || '';
+    normalized.personalInformation.heightCm =
+      personalData.height || personalData.heightCm || '';
+    normalized.personalInformation.weightKg =
+      personalData.weight || personalData.weightKg || '';
+    normalized.personalInformation.bloodType =
+      personalData.blood_type || personalData.bloodType || '';
+    normalized.personalInformation.gsisIdNo =
+      personalData.gsis_id_no || personalData.gsisIdNo || '';
+    normalized.personalInformation.pagIbigIdNo =
+      personalData.pag_ibig_id_no || personalData.pagIbigIdNo || '';
+    normalized.personalInformation.philHealthNo =
+      personalData.philhealth_no || personalData.philHealthNo || '';
+    normalized.personalInformation.sssNo =
+      personalData.sss_no || personalData.sssNo || '';
+    normalized.personalInformation.tin =
+      personalData.tin_no || personalData.tin || '';
+    normalized.personalInformation.agencyEmployeeNo =
+      personalData.agency_employee_no || personalData.agencyEmployeeNo || '';
+    normalized.personalInformation.emailAddress =
+      personalData.email_address || personalData.emailAddress || '';
+    normalized.personalInformation.mobileNo =
+      personalData.mobile_no || personalData.mobileNo || '';
+    normalized.personalInformation.telephoneNo =
+      personalData.telephone_no || personalData.telephoneNo || '';
+
+    // Handle citizenship
+    if (personalData.citizenship) {
+      if (typeof personalData.citizenship === 'string') {
+        normalized.personalInformation.citizenship.type =
+          personalData.citizenship;
+      } else if (personalData.citizenship.type) {
+        normalized.personalInformation.citizenship.type =
+          personalData.citizenship.type;
+      }
+    }
+
+    // Handle addresses
+    const residentialAddr =
+      personalData.residential_address || personalData.residentialAddress;
+    if (residentialAddr) {
+      normalized.personalInformation.residentialAddress.houseLotBlockNo =
+        residentialAddr.house_block_lot ||
+        residentialAddr.houseLotBlockNo ||
+        '';
+      normalized.personalInformation.residentialAddress.street =
+        residentialAddr.street || '';
+      normalized.personalInformation.residentialAddress.subdivisionVillage =
+        residentialAddr.subdivision_village ||
+        residentialAddr.subdivisionVillage ||
+        '';
+      normalized.personalInformation.residentialAddress.barangay =
+        residentialAddr.barangay || '';
+      normalized.personalInformation.residentialAddress.cityMunicipality =
+        residentialAddr.city_municipality ||
+        residentialAddr.cityMunicipality ||
+        '';
+      normalized.personalInformation.residentialAddress.province =
+        residentialAddr.province || '';
+      normalized.personalInformation.residentialAddress.zipCode =
+        residentialAddr.zip_code || residentialAddr.zipCode || '';
+    }
+
+    const permanentAddr =
+      personalData.permanent_address || personalData.permanentAddress;
+    if (permanentAddr) {
+      normalized.personalInformation.permanentAddress.houseLotBlockNo =
+        permanentAddr.house_block_lot || permanentAddr.houseLotBlockNo || '';
+      normalized.personalInformation.permanentAddress.street =
+        permanentAddr.street || '';
+      normalized.personalInformation.permanentAddress.subdivisionVillage =
+        permanentAddr.subdivision_village ||
+        permanentAddr.subdivisionVillage ||
+        '';
+      normalized.personalInformation.permanentAddress.barangay =
+        permanentAddr.barangay || '';
+      normalized.personalInformation.permanentAddress.cityMunicipality =
+        permanentAddr.city_municipality || permanentAddr.cityMunicipality || '';
+      normalized.personalInformation.permanentAddress.province =
+        permanentAddr.province || '';
+      normalized.personalInformation.permanentAddress.zipCode =
+        permanentAddr.zip_code || permanentAddr.zipCode || '';
+    }
   }
 
-  // Handle legacy field names for backward compatibility
-  if (data.personalInfo && !data.personalInformation) {
-    Object.assign(normalized.personalInformation, data.personalInfo);
+  // Family Background mapping
+  const familyData =
+    data.family_background || data.familyBackground || data.family;
+  if (familyData) {
+    if (familyData.spouse) {
+      normalized.familyBackground.spouse.firstName =
+        familyData.spouse.first_name || familyData.spouse.firstName || '';
+      normalized.familyBackground.spouse.lastName =
+        familyData.spouse.surname || familyData.spouse.lastName || '';
+      normalized.familyBackground.spouse.middleName =
+        familyData.spouse.middle_name || familyData.spouse.middleName || '';
+      normalized.familyBackground.spouse.occupation =
+        familyData.spouse.occupation || '';
+      normalized.familyBackground.spouse.businessName =
+        familyData.spouse.employer_business_name ||
+        familyData.spouse.businessName ||
+        '';
+      normalized.familyBackground.spouse.businessAddress =
+        familyData.spouse.business_address ||
+        familyData.spouse.businessAddress ||
+        '';
+      normalized.familyBackground.spouse.telephoneNo =
+        familyData.spouse.telephone_no || familyData.spouse.telephoneNo || '';
+    }
+
+    if (familyData.father) {
+      normalized.familyBackground.father.firstName =
+        familyData.father.first_name || familyData.father.firstName || '';
+      normalized.familyBackground.father.lastName =
+        familyData.father.surname || familyData.father.lastName || '';
+      normalized.familyBackground.father.middleName =
+        familyData.father.middle_name || familyData.father.middleName || '';
+    }
+
+    if (familyData.mother || familyData.motherMaidenName) {
+      const motherData = familyData.mother || familyData.motherMaidenName;
+      normalized.familyBackground.motherMaidenName.firstName =
+        motherData.first_name || motherData.firstName || '';
+      normalized.familyBackground.motherMaidenName.lastName =
+        motherData.surname || motherData.lastName || '';
+      normalized.familyBackground.motherMaidenName.middleName =
+        motherData.middle_name || motherData.middleName || '';
+    }
+
+    if (familyData.children && Array.isArray(familyData.children)) {
+      normalized.familyBackground.children = familyData.children;
+    }
   }
-  if (data.family && !data.familyBackground) {
-    Object.assign(normalized.familyBackground, data.family);
+
+  // Educational Background mapping
+  const educationData =
+    data.educational_background || data.educationalBackground || data.education;
+  if (Array.isArray(educationData)) {
+    normalized.educationalBackground = educationData.map(edu => ({
+      level: edu.level || '',
+      nameOfSchool: edu.school_name || edu.nameOfSchool || '',
+      basicEducationDegreeCourse:
+        edu.basic_education_degree_course ||
+        edu.basicEducationDegreeCourse ||
+        '',
+      periodOfAttendance: {
+        from: edu.period_attendance?.from || edu.periodOfAttendance?.from || '',
+        to: edu.period_attendance?.to || edu.periodOfAttendance?.to || ''
+      },
+      yearGraduated: edu.year_graduated || edu.yearGraduated || '',
+      scholarshipAcademicHonorsReceived:
+        edu.scholarship_academic_honors ||
+        edu.scholarshipAcademicHonorsReceived ||
+        ''
+    }));
   }
-  if (data.education && !data.educationalBackground) {
-    normalized.educationalBackground = data.education;
+
+  // Civil Service Eligibility mapping
+  const civilServiceData =
+    data.civil_service_eligibility ||
+    data.civilServiceEligibility ||
+    data.civilService;
+  if (Array.isArray(civilServiceData)) {
+    normalized.civilServiceEligibility = civilServiceData.map(cs => ({
+      careerServiceOrEligibility:
+        cs.career_service || cs.careerServiceOrEligibility || '',
+      rating: cs.rating || '',
+      dateOfExaminationConferment:
+        cs.date_of_examination || cs.dateOfExaminationConferment || '',
+      placeOfExaminationConferment:
+        cs.place_of_examination || cs.placeOfExaminationConferment || '',
+      licenseNumber: cs.license_number || cs.licenseNumber || ''
+    }));
   }
-  if (data.civilService && !data.civilServiceEligibility) {
-    normalized.civilServiceEligibility = data.civilService;
+
+  // Work Experience mapping
+  const workData = data.work_experience || data.workExperience;
+  if (Array.isArray(workData)) {
+    normalized.workExperience = workData.map(work => ({
+      positionTitle: work.position_title || work.positionTitle || '',
+      departmentAgencyOfficeCompany:
+        work.department_agency_office_company ||
+        work.departmentAgencyOfficeCompany ||
+        '',
+      from: work.inclusive_dates?.from || work.from || '',
+      to: work.inclusive_dates?.to || work.to || '',
+      monthlySalary: work.monthly_salary || work.monthlySalary || 0,
+      salaryJobPayGradeStep:
+        work.salary_job_pay_grade || work.salaryJobPayGradeStep || '',
+      statusOfAppointment:
+        work.status_of_appointment || work.statusOfAppointment || '',
+      governmentService:
+        work.govt_service === 'Y' || work.governmentService === true
+    }));
   }
-  if (data.workExperience && !data.workExperience) {
-    normalized.workExperience = data.workExperience;
+
+  // Voluntary Work mapping
+  const voluntaryData = data.voluntary_work || data.voluntaryWork;
+  if (Array.isArray(voluntaryData)) {
+    normalized.voluntaryWork = voluntaryData.map(vol => ({
+      nameAndAddress: vol.name_address_organization || vol.nameAndAddress || '',
+      positionNatureOfWork:
+        vol.position_nature_of_work || vol.positionNatureOfWork || '',
+      from: vol.inclusive_dates?.from || vol.from || '',
+      to: vol.inclusive_dates?.to || vol.to || '',
+      numberOfHours: vol.number_of_hours || vol.numberOfHours || ''
+    }));
   }
-  if (data.voluntaryWork && !data.voluntaryWork) {
-    normalized.voluntaryWork = data.voluntaryWork;
+
+  // Learning and Development mapping
+  const trainingData =
+    data.learning_and_development || data.trainings || data.training;
+  if (Array.isArray(trainingData)) {
+    normalized.trainings = trainingData.map(train => ({
+      title: train.title || '',
+      typeOfLd: train.type_of_ld || train.typeOfLd || '',
+      conductedSponsoredBy:
+        train.conducted_sponsored_by || train.conductedSponsoredBy || '',
+      from: train.inclusive_dates?.from || train.from || '',
+      to: train.inclusive_dates?.to || train.to || '',
+      numberOfHours: train.number_of_hours || train.numberOfHours || ''
+    }));
   }
-  if (data.training && !data.trainings) {
-    normalized.trainings = data.training;
+
+  // Other Information mapping (skills, recognitions, memberships)
+  const otherData = data.other_information || data.otherInformation;
+  if (otherData) {
+    // Skills
+    if (otherData.special_skills_hobbies) {
+      normalized.skills = otherData.special_skills_hobbies
+        .split(',')
+        .map(s => s.trim())
+        .filter(s => s);
+    } else if (Array.isArray(data.skills)) {
+      normalized.skills = data.skills;
+    }
+
+    // Recognitions
+    if (otherData.non_academic_distinctions) {
+      normalized.recognitions = otherData.non_academic_distinctions
+        .split(',')
+        .map(r => r.trim())
+        .filter(r => r);
+    } else if (Array.isArray(data.recognitions)) {
+      normalized.recognitions = data.recognitions;
+    }
+
+    // Memberships
+    if (otherData.membership_in_organizations) {
+      normalized.memberships = otherData.membership_in_organizations
+        .split(',')
+        .map(m => m.trim())
+        .filter(m => m);
+    } else if (Array.isArray(data.memberships)) {
+      normalized.memberships = data.memberships;
+    }
+  }
+
+  // References mapping
+  const referencesData = data.references;
+  if (Array.isArray(referencesData)) {
+    normalized.references = referencesData.map(ref => ({
+      name: ref.name || '',
+      address: ref.address || '',
+      contactNumber: ref.telephone_no || ref.contactNumber || ''
+    }));
   }
 
   return normalized;
@@ -283,183 +518,389 @@ router.post('/', [auth, upload.single('file')], async (req, res) => {
     });
     await doc.save();
 
-    // --- PDS PDF to image + OpenAI extraction ---
+    // --- PDS PDF processing with GoogleGenerativeAI + pdf-parse ---
     if (doc.type === 'pds' && req.file.mimetype === 'application/pdf') {
-      const pdf = require('pdf-poppler');
-      const { OpenAI } = require('openai');
+      const pdf = require('pdf-parse');
+      const { GoogleGenerativeAI } = require('@google/generative-ai');
       const outputDir = path.join('uploads', 'pds', doc._id.toString());
-      if (!fs.existsSync(outputDir))
+
+      if (!fs.existsSync(outputDir)) {
         fs.mkdirSync(outputDir, { recursive: true });
+      }
 
-      // Convert PDF to images
-      await pdf.convert(req.file.path, {
-        format: 'jpeg',
-        out_dir: outputDir,
-        out_prefix: 'page',
-        page: null // all pages
-      });
+      try {
+        console.log('📄 Starting PDS PDF processing...');
 
-      // Get all image files
-      const imageFiles = fs
-        .readdirSync(outputDir)
-        .filter(f => f.endsWith('.jpg'))
-        .map(f => path.join(outputDir, f));
+        // Read PDF file and extract text
+        const dataBuffer = fs.readFileSync(req.file.path);
+        const pdfData = await pdf(dataBuffer);
+        const rawText = pdfData.text;
 
-      // OpenAI Vision API setup
-      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+        console.log(
+          `✅ Extracted text from PDF (${rawText.length} characters)`
+        );
 
-      // Process all images in parallel
-      const parsedPages = await Promise.all(
-        imageFiles.map(async imgPath => {
-          const imageData = fs.readFileSync(imgPath, { encoding: 'base64' });
-          const response = await openai.chat.completions.create({
-            model: 'gpt-5',
-            messages: [
-              {
-                role: 'user',
-                content: [
-                  {
-                    type: 'text',
-                    text: `
-              Extract all the information from the uploaded Personal Data Sheet (PDS) 
-              and organize it into a well-structured JSON format. Ensure that:
+        // Initialize GoogleGenerativeAI
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
-              1. The JSON keys follow a consistent naming convention using camelCase.  
-              2. Group related fields under logical sections (e.g., personalInformation, 
-                 familyBackground, educationalBackground, civilServiceEligibility, 
-                 workExperience, voluntaryWork, trainings, skills, references).  
-              3. Dates should follow the YYYY-MM-DD format.  
-              4. Numbers should be integers/floats, not strings.  
-              5. Empty/missing values should be null.  
-              6. Use arrays for multiple entries (e.g., workExperience, trainings, references).  
-              7. Preserve all details as written in the PDS without summarizing.  
+        // Create the prompt for PDS parsing
+        const prompt = `
 
-              Return ONLY the JSON object as output.
-              `
-                  },
-                  {
-                    type: 'image_url',
-                    image_url: {
-                      url: `data:image/jpeg;base64,${imageData}`,
-                      detail: 'high'
-                    }
-                  }
-                ]
-              }
-            ]
+        Convert the following Personal Data Sheet (PDS) raw text into a structured JSON format. Extract all available information and organize it according to the standard PDS sections. Use null for empty or missing fields, and maintain data types appropriately (strings for text, numbers for numeric values, arrays for lists, objects for nested data).
+Structure the JSON with the following main sections:
+- personal_information
+- family_background
+- educational_background
+- civil_service_eligibility
+- work_experience
+- voluntary_work
+- learning_and_development
+- other_information
+- questionnaire_responses
+- references
+- authentication
+
+For each section, create appropriate nested objects and arrays. For dates, use the format "mm/dd/yyyy" as provided in the source. For salary amounts, extract numeric values. For boolean fields in questionnaire responses, use true/false/null.  
+
+Example structure:
+{
+  "personal_information": {
+    "cs_id_no": null,
+    "surname": "string",
+    "first_name": "string",
+    "middle_name": "string",
+    "name_extension": null,
+    "date_of_birth": "mm/dd/yyyy",
+    "place_of_birth": "string",
+    "sex": "Male/Female",
+    "civil_status": "string",
+    "height": "string",
+    "weight": "string",
+    "blood_type": "string",
+    "gsis_id_no": "string",
+    "pag_ibig_id_no": "string",
+    "philhealth_no": "string",
+    "sss_no": "string",
+    "tin_no": "string",
+    "agency_employee_no": "string",
+    "citizenship": "string",
+    "dual_citizenship": null,
+    "residential_address": {
+      "house_block_lot": "string",
+      "street": "string",
+      "subdivision_village": "string",
+      "barangay": "string",
+      "city_municipality": "string",
+      "province": "string",
+      "zip_code": "string"
+    },
+    "permanent_address": {
+      // same structure as residential_address
+    },
+    "telephone_no": "string",
+    "mobile_no": "string",
+    "email_address": "string"
+  },
+  "family_background": {
+    "spouse": {
+      "surname": "string",
+      "first_name": "string",
+      "middle_name": "string",
+      "occupation": "string",
+      "employer_business_name": "string",
+      "business_address": "string",
+      "telephone_no": "string"
+    },
+    "children": [
+      {
+        "name": "string",
+        "date_of_birth": "mm/dd/yyyy"
+      }
+    ],
+    "father": {
+      "surname": "string",
+      "first_name": "string",
+      "middle_name": "string"
+    },
+    "mother": {
+      "maiden_name": "string",
+      "surname": "string",
+      "first_name": "string",
+      "middle_name": "string"
+    }
+  },
+  "educational_background": [
+    {
+      "level": "ELEMENTARY/SECONDARY/VOCATIONAL/COLLEGE/GRADUATE STUDIES",       
+      "school_name": "string",
+      "basic_education_degree_course": "string",
+      "period_attendance": {
+        "from": "mm/dd/yyyy",
+        "to": "mm/dd/yyyy"
+      },
+      "highest_level_units_earned": "string",
+      "year_graduated": "yyyy",
+      "scholarship_academic_honors": "string"
+    }
+  ],
+  "civil_service_eligibility": [
+    {
+      "career_service": "string",
+      "rating": "string",
+      "date_of_examination": "mm/dd/yyyy",
+      "place_of_examination": "string",
+      "license_number": "string",
+      "date_of_validity": "mm/dd/yyyy"
+    }
+  ],
+  "work_experience": [
+    {
+      "position_title": "string",
+      "department_agency_office_company": "string",
+      "inclusive_dates": {
+        "from": "mm/dd/yyyy",
+        "to": "mm/dd/yyyy"
+      },
+      "monthly_salary": number,
+      "salary_job_pay_grade": "string",
+      "status_of_appointment": "string",
+      "govt_service": "Y/N"
+    }
+  ],
+  "voluntary_work": [
+    {
+      "name_address_organization": "string",
+      "position_nature_of_work": "string",
+      "inclusive_dates": {
+        "from": "mm/dd/yyyy",
+        "to": "mm/dd/yyyy"
+      },
+      "number_of_hours": "string"
+    }
+  ],
+  "learning_and_development": [
+    {
+      "title": "string",
+      "type_of_ld": "string",
+      "conducted_sponsored_by": "string",
+      "inclusive_dates": {
+        "from": "mm/dd/yyyy",
+        "to": "mm/dd/yyyy"
+      },
+      "number_of_hours": "string"
+    }
+  ],
+  "other_information": {
+    "special_skills_hobbies": "string",
+    "non_academic_distinctions": "string",
+    "membership_in_organizations": "string"
+  },
+  "questionnaire_responses": {
+    "person_with_disability": null,
+    "solo_parent": null,
+    "member_of_indigenous_group": null,
+    "immigrant_permanent_resident": null,
+    "related_by_consanguinity_affinity": null,
+    "found_guilty_administrative_offense": null,
+    "criminally_charged": null,
+    "convicted_of_crime": null,
+    "candidate_in_election": null,
+    "resigned_for_election_campaign": null,
+    "separated_from_service": null
+  },
+  "references": [
+    {
+      "name": "string",
+      "address": "string",
+      "telephone_no": "string"
+    }
+  ],
+  "authentication": {
+    "date_accomplished": "mm/dd/yyyy",
+    "government_issued_id": "string",
+    "id_number": "string",
+    "date_of_issuance": "mm/dd/yyyy"
+  }
+}
+}
+
+Now convert the following PDS raw text:
+
+${rawText}
+
+Return ONLY the JSON object as output.`;
+
+        console.log('🤖 Processing with GoogleGenerativeAI...');
+
+        // Generate content using Gemini
+        const result = await model.generateContent(prompt);
+        const responseText = result.response.text();
+
+        console.log('✅ Received response from Gemini');
+
+        // Parse the JSON response
+        let parsedData;
+        try {
+          // Clean the response text to extract JSON
+          const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            parsedData = JSON.parse(jsonMatch[0]);
+          } else {
+            parsedData = JSON.parse(responseText);
+          }
+        } catch (parseError) {
+          console.error(
+            '⚠️ Failed to parse Gemini response as JSON:',
+            parseError
+          );
+          console.error('Raw response:', responseText);
+          throw new Error('Failed to parse PDS data from AI response');
+        }
+
+        console.log('✅ Successfully parsed PDS data');
+
+        // Clean the parsed data to fix any malformed responses
+        console.log('🧹 Cleaning parsed data...');
+        const cleanedData = cleanOpenAIResponse(parsedData);
+
+        // Normalize the structure for consistent database storage
+        console.log('🔧 Normalizing PDS data structure...');
+        const normalizedData = normalizePdsStructure(cleanedData);
+
+        // Save debug files
+        const rawResponsePath = path.join(outputDir, 'raw_response.txt');
+        const parsedDataPath = path.join(outputDir, 'parsed_data.json');
+        const cleanedDataPath = path.join(outputDir, 'cleaned_data.json');
+        const normalizedDataPath = path.join(outputDir, 'normalized_data.json');
+
+        fs.writeFileSync(rawResponsePath, responseText, 'utf-8');
+        fs.writeFileSync(
+          parsedDataPath,
+          JSON.stringify(parsedData, null, 2),
+          'utf-8'
+        );
+        fs.writeFileSync(
+          cleanedDataPath,
+          JSON.stringify(cleanedData, null, 2),
+          'utf-8'
+        );
+        fs.writeFileSync(
+          normalizedDataPath,
+          JSON.stringify(normalizedData, null, 2),
+          'utf-8'
+        );
+
+        console.log('📁 Saved debug files:', {
+          rawResponse: rawResponsePath,
+          parsedData: parsedDataPath,
+          cleanedData: cleanedDataPath,
+          normalizedData: normalizedDataPath
+        });
+
+        // Save the cleaned data to the document (keep original for backward compatibility)
+        console.log('💾 Saving cleaned data to Document model...');
+
+        console.log({ cleanedData });
+        doc.parsedData = cleanedData;
+        const savedDoc = await doc.save();
+        console.log(
+          '✅ Document saved with parsedData:',
+          !!savedDoc.parsedData
+        );
+
+        // Remove any existing PDS data for this document to prevent duplicates
+        console.log('🗑️ Removing existing PDS data for this document...');
+        const deletedCount = await PdsExtractedData.deleteMany({
+          userId: doc.userId,
+          documentId: doc._id
+        });
+        console.log(
+          `🗑️ Deleted ${deletedCount.deletedCount} existing PDS entries`
+        );
+
+        // Save the normalized data to PdsExtractedData collection for consistent structure
+        console.log('💾 Creating new PdsExtractedData entry...');
+        const pdsExtractedData = await PdsExtractedData.create({
+          userId: doc.userId,
+          documentId: doc._id,
+          data: cleanedData
+        });
+        console.log(
+          '✅ PdsExtractedData created with ID:',
+          pdsExtractedData._id
+        );
+
+        // Automatically generate and save resume from PDS data
+        console.log('🤖 Generating resume from PDS data...');
+        try {
+          const resumeData = await generateResumeFromPds(
+            cleanedData,
+            'General',
+            'Professional'
+          );
+
+          // Save the generated resume to database
+          const resume = await Resume.create({
+            userId: doc.userId,
+            documentId: doc._id,
+            resumeData: resumeData,
+            metadata: {
+              generatedAt: new Date(),
+              atsOptimized: true,
+              targetIndustry: 'General',
+              targetRole: 'Professional',
+              keywordCount: resumeData.metadata?.keywordCount || 0,
+              atsScore: resumeData.atsOptimization?.atsScore || 0
+            },
+            status: 'generated'
           });
 
-          // Parse response as JSON (in case the API returns extra text)
-          try {
-            return JSON.parse(response.choices[0].message.content);
-          } catch (err) {
-            console.error(
-              '⚠️ Invalid JSON returned:',
-              response.choices[0].message.content
-            );
-            return null;
-          }
-        })
-      );
-
-      // Merge/extract fields from all pages
-      const merged = {};
-
-      parsedPages.forEach(page => {
-        if (!page) return; // skip null/invalid pages
-
-        for (const [key, value] of Object.entries(page)) {
-          if (Array.isArray(merged[key]) && Array.isArray(value)) {
-            merged[key] = [...merged[key], ...value];
-          } else if (merged[key] && value) {
-            merged[key] = value;
-          } else if (!merged[key]) {
-            merged[key] = value;
-          }
+          console.log('✅ Resume generated and saved with ID:', resume._id);
+          console.log(
+            '📊 Resume ATS Score:',
+            resumeData.atsOptimization?.atsScore || 'N/A'
+          );
+        } catch (resumeError) {
+          console.error('❌ Error generating resume:', resumeError);
+          // Don't fail the entire PDS processing if resume generation fails
+          console.log(
+            '⚠️ Continuing PDS processing despite resume generation error'
+          );
         }
-      });
 
-      // Save parsedPages to JSON (all pages separately)
-      const parsedPagesPath = path.join(outputDir, 'parsed_pages.json');
-      fs.writeFileSync(
-        parsedPagesPath,
-        JSON.stringify(parsedPages, null, 2),
-        'utf-8'
-      );
+        // Verify the data was saved correctly
+        console.log('🔍 Verifying saved data...');
+        const verifyDoc = await Document.findById(doc._id);
+        const verifyPdsData = await PdsExtractedData.findOne({
+          userId: doc.userId,
+          documentId: doc._id
+        });
 
-      // Save merged PDS to JSON (final merged result)
-      const mergedPath = path.join(outputDir, 'merged_pds.json');
-      fs.writeFileSync(mergedPath, JSON.stringify(merged, null, 2), 'utf-8');
+        console.log('📊 Document verification:', {
+          hasParsedData: !!verifyDoc?.parsedData,
+          parsedDataKeys: verifyDoc?.parsedData
+            ? Object.keys(verifyDoc.parsedData)
+            : []
+        });
 
-      console.log(`✅ Saved parsed pages: ${parsedPagesPath}`);
-      console.log(`✅ Saved merged PDS: ${mergedPath}`);
+        console.log('📊 PdsExtractedData verification:', {
+          found: !!verifyPdsData,
+          hasData: !!verifyPdsData?.data,
+          dataKeys: verifyPdsData?.data ? Object.keys(verifyPdsData.data) : []
+        });
 
-      console.log({ merged });
-
-      // Clean the merged data to fix malformed OpenAI responses
-      console.log('✅ Cleaning merged data to fix malformed responses...');
-      const cleanedMerged = cleanOpenAIResponse(merged);
-
-      // Normalize the structure for consistent database storage
-      console.log('✅ Normalizing PDS data structure...');
-      const normalizedData = normalizePdsStructure(cleanedMerged);
-
-      // Log what we're about to save
-      console.log('📝 Original merged data structure:', Object.keys(merged));
-      console.log('🧹 Cleaned data structure:', Object.keys(cleanedMerged));
-      console.log('🔧 Normalized data structure:', Object.keys(normalizedData));
-
-      // Save the cleaned data to a file for verification
-      const cleanedDataPath = path.join(outputDir, 'cleaned_data.json');
-      fs.writeFileSync(
-        cleanedDataPath,
-        JSON.stringify(cleanedMerged, null, 2),
-        'utf-8'
-      );
-      console.log(`✅ Saved cleaned data: ${cleanedDataPath}`);
-
-      // Save the normalized data to a file for verification
-      const normalizedDataPath = path.join(outputDir, 'normalized_data.json');
-      fs.writeFileSync(
-        normalizedDataPath,
-        JSON.stringify(normalizedData, null, 2),
-        'utf-8'
-      );
-      console.log(`✅ Saved normalized data: ${normalizedDataPath}`);
-
-      // Save the cleaned merged data to the document (keep original for backward compatibility)
-      doc.parsedData = cleanedMerged;
-      await doc.save();
-
-      // Remove any existing PDS data for this document to prevent duplicates
-      await PdsExtractedData.deleteMany({
-        userId: doc.userId,
-        documentId: doc._id
-      });
-
-      // Save the normalized data to PdsExtractedData collection for consistent structure
-      await PdsExtractedData.create({
-        userId: doc.userId,
-        documentId: doc._id,
-        data: normalizedData
-      });
-
-      console.log(
-        '✅ Saved cleaned merged data to database (removed old entries)'
-      );
-
-      // Only delete image files, keep JSON files for debugging
-      imageFiles.forEach(imgPath => {
-        try {
-          fs.unlinkSync(imgPath);
-        } catch (e) {
-          console.error('Failed to delete image:', imgPath, e);
-        }
-      });
-
-      console.log(
-        '✅ Kept JSON files for debugging: extracted.json, parsed_pages.json, merged_pds.json, cleaned_data.json, normalized_data.json'
-      );
+        console.log('✅ Successfully saved PDS data to database');
+        console.log('📊 Data structure keys:', Object.keys(normalizedData));
+        console.log('📊 Document ID:', doc._id);
+        console.log('📊 User ID:', doc.userId);
+      } catch (error) {
+        console.error('❌ Error processing PDS:', error);
+        // Don't fail the entire upload if PDS processing fails
+        console.log(
+          '⚠️ Continuing with document upload despite PDS processing error'
+        );
+      }
     }
 
     res.status(201).json(doc);
@@ -798,6 +1239,307 @@ router.post('/parse-pds/:id', [auth, authorize('admin')], async (req, res) => {
     res
       .status(500)
       .json({ message: 'Error parsing PDS', error: error.message });
+  }
+});
+
+// Get saved resume for a document
+router.get('/resume/:documentId', auth, async (req, res) => {
+  try {
+    const { documentId } = req.params;
+
+    console.log(`🔍 Looking for saved resume for document: ${documentId}`);
+    console.log(`👤 User ID: ${req.user._id}`);
+
+    // Find the saved resume
+    const resume = await Resume.findOne({
+      userId: req.user._id,
+      documentId: documentId
+    }).sort({ createdAt: -1 });
+
+    if (!resume) {
+      console.log(`❌ No saved resume found for document: ${documentId}`);
+      return res.status(404).json({
+        message: 'No saved resume found. Please generate a resume first.',
+        debug: {
+          documentId,
+          userId: req.user._id
+        }
+      });
+    }
+
+    console.log(`✅ Found saved resume with ID: ${resume._id}`);
+    console.log(`📊 Resume ATS Score: ${resume.metadata?.atsScore || 'N/A'}`);
+
+    res.json({
+      success: true,
+      resume: resume.resumeData,
+      metadata: resume.metadata,
+      variants: resume.variants,
+      optimizedForJobs: resume.optimizedForJobs,
+      status: resume.status,
+      createdAt: resume.createdAt,
+      updatedAt: resume.updatedAt
+    });
+  } catch (error) {
+    console.error('Error fetching saved resume:', error);
+    res.status(500).json({
+      message: 'Failed to fetch saved resume',
+      error: error.message
+    });
+  }
+});
+
+// Generate resume from PDS data (now checks for existing resume first)
+router.post('/generate-resume/:documentId', auth, async (req, res) => {
+  try {
+    const { documentId } = req.params;
+    const { targetIndustry = 'General', targetRole = 'Professional' } =
+      req.body;
+
+    console.log(`🎯 Generating resume for document: ${documentId}`);
+    console.log(`📊 Target industry: ${targetIndustry}`);
+    console.log(`📊 Target role: ${targetRole}`);
+    console.log(`👤 User ID: ${req.user._id}`);
+
+    // Check if resume already exists for this document
+    const existingResume = await Resume.findOne({
+      userId: req.user._id,
+      documentId: documentId
+    }).sort({ createdAt: -1 });
+
+    if (existingResume) {
+      console.log(`✅ Found existing resume with ID: ${existingResume._id}`);
+      console.log(
+        `📊 Existing resume ATS Score: ${
+          existingResume.metadata?.atsScore || 'N/A'
+        }`
+      );
+
+      // If it's the same industry and role, return existing resume
+      if (
+        existingResume.metadata?.targetIndustry === targetIndustry &&
+        existingResume.metadata?.targetRole === targetRole
+      ) {
+        return res.json({
+          success: true,
+          resume: existingResume.resumeData,
+          metadata: existingResume.metadata,
+          variants: existingResume.variants,
+          optimizedForJobs: existingResume.optimizedForJobs,
+          status: existingResume.status,
+          message: 'Using existing resume'
+        });
+      }
+    }
+
+    // First verify the document exists and user has access
+    const document = await Document.findById(documentId);
+    console.log(`📄 Document found:`, !!document);
+    if (document) {
+      console.log(`📄 Document type: ${document.type}`);
+      console.log(`📄 Document user ID: ${document.userId}`);
+      console.log(`📄 Document title: ${document.title}`);
+    }
+
+    if (!document) {
+      console.log(`❌ Document not found for ID: ${documentId}`);
+      return res.status(404).json({ message: 'Document not found' });
+    }
+
+    if (document.userId.toString() !== req.user._id.toString()) {
+      return res
+        .status(403)
+        .json({ message: 'Not authorized to access this document' });
+    }
+
+    // Get the extracted PDS data
+    console.log(
+      `🔍 Looking for PDS data for user: ${req.user._id}, document: ${documentId}`
+    );
+    const pdsData = await PdsExtractedData.findOne({
+      userId: req.user._id,
+      documentId: documentId
+    }).sort({ createdAt: -1 });
+
+    console.log(`📋 PDS data found:`, !!pdsData);
+    if (pdsData) {
+      console.log(`📋 PDS data ID: ${pdsData._id}`);
+      console.log(`📋 PDS data keys:`, Object.keys(pdsData.data || {}));
+    }
+
+    if (!pdsData) {
+      // Let's check what PDS data exists for this user
+      const allPdsData = await PdsExtractedData.find({
+        userId: req.user._id
+      });
+      console.log(`⚠️ No PDS data found for document ${documentId}`);
+      console.log(`📊 Total PDS entries for user: ${allPdsData.length}`);
+      console.log(
+        `📋 Available document IDs:`,
+        allPdsData.map(p => p.documentId.toString())
+      );
+
+      return res.status(404).json({
+        message:
+          'PDS extracted data not found. Please ensure PDS processing is complete.',
+        debug: {
+          totalEntries: allPdsData.length,
+          availableDocumentIds: allPdsData.map(p => p.documentId.toString())
+        }
+      });
+    }
+
+    console.log('📋 Found PDS data, generating resume...');
+
+    // Generate resume from PDS data
+    const resumeData = await generateResumeFromPds(
+      pdsData.data,
+      targetIndustry,
+      targetRole
+    );
+
+    // Save the generated resume to database
+    const resume = await Resume.create({
+      userId: req.user._id,
+      documentId: documentId,
+      resumeData: resumeData,
+      metadata: {
+        generatedAt: new Date(),
+        atsOptimized: true,
+        targetIndustry: targetIndustry,
+        targetRole: targetRole,
+        keywordCount: resumeData.metadata?.keywordCount || 0,
+        atsScore: resumeData.atsOptimization?.atsScore || 0
+      },
+      status: 'generated'
+    });
+
+    console.log('✅ Resume generated and saved with ID:', resume._id);
+    console.log(
+      '📊 Resume ATS Score:',
+      resumeData.atsOptimization?.atsScore || 'N/A'
+    );
+
+    res.json({
+      success: true,
+      resume: resumeData,
+      metadata: resumeData.metadata,
+      resumeId: resume._id,
+      message: 'Resume generated and saved successfully'
+    });
+  } catch (error) {
+    console.error('❌ Error generating resume:', error);
+    res.status(500).json({
+      message: 'Error generating resume',
+      error: error.message
+    });
+  }
+});
+
+// Generate multiple resume variants for different industries
+router.post('/generate-resume-variants/:documentId', auth, async (req, res) => {
+  try {
+    const { documentId } = req.params;
+    const {
+      industries = ['Technology', 'Healthcare', 'Finance', 'Education']
+    } = req.body;
+
+    console.log(`🎯 Generating resume variants for document: ${documentId}`);
+    console.log(`📊 Industries: ${industries.join(', ')}`);
+
+    // First verify the document exists and user has access
+    const document = await Document.findById(documentId);
+    if (!document) {
+      return res.status(404).json({ message: 'Document not found' });
+    }
+
+    if (document.userId.toString() !== req.user._id.toString()) {
+      return res
+        .status(403)
+        .json({ message: 'Not authorized to access this document' });
+    }
+
+    // Get the extracted PDS data
+    const pdsData = await PdsExtractedData.findOne({
+      userId: req.user._id,
+      documentId: documentId
+    }).sort({ createdAt: -1 });
+
+    if (!pdsData) {
+      return res.status(404).json({
+        message:
+          'PDS extracted data not found. Please ensure PDS processing is complete.'
+      });
+    }
+
+    console.log('📋 Found PDS data, generating resume variants...');
+
+    // Generate resume variants for different industries
+    const resumeVariants = await resumeGenerator.generateResumeVariants(
+      pdsData.data,
+      industries
+    );
+
+    console.log('✅ Resume variants generated successfully');
+
+    res.json({
+      success: true,
+      variants: resumeVariants,
+      metadata: {
+        documentId,
+        generatedAt: new Date().toISOString(),
+        industries,
+        sourceData: 'PDS'
+      }
+    });
+  } catch (error) {
+    console.error('❌ Error generating resume variants:', error);
+    res.status(500).json({
+      message: 'Error generating resume variants',
+      error: error.message
+    });
+  }
+});
+
+// Optimize resume for specific job
+router.post('/optimize-resume-for-job', auth, async (req, res) => {
+  try {
+    const { resumeData, jobDescription, jobTitle, companyName } = req.body;
+
+    if (!resumeData || !jobDescription || !jobTitle) {
+      return res.status(400).json({
+        message: 'Missing required fields: resumeData, jobDescription, jobTitle'
+      });
+    }
+
+    console.log(`🎯 Optimizing resume for job: ${jobTitle} at ${companyName}`);
+
+    // Optimize resume for the specific job
+    const optimizedResume = await resumeGenerator.optimizeResumeForJob(
+      resumeData,
+      jobDescription,
+      jobTitle,
+      companyName
+    );
+
+    console.log('✅ Resume optimized successfully');
+
+    res.json({
+      success: true,
+      optimizedResume,
+      metadata: {
+        optimizedAt: new Date().toISOString(),
+        jobTitle,
+        companyName,
+        originalResume: resumeData
+      }
+    });
+  } catch (error) {
+    console.error('❌ Error optimizing resume:', error);
+    res.status(500).json({
+      message: 'Error optimizing resume for job',
+      error: error.message
+    });
   }
 });
 
