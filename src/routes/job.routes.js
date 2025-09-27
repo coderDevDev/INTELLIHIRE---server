@@ -23,6 +23,7 @@ router.get('/', async (req, res) => {
       location,
       type,
       search,
+      companyId,
       page = 1,
       limit = 10,
       sort = '-postedDate'
@@ -33,8 +34,9 @@ router.get('/', async (req, res) => {
       // expiryDate: { $gt: new Date() }
     };
 
-    console.log({ category });
+    console.log({ category, companyId });
     if (category) query.categoryId = category;
+    if (companyId) query.companyId = companyId;
     if (location) query.location = new RegExp(location, 'i');
     if (type) query.employmentType = type;
     if (search) {
@@ -74,6 +76,7 @@ router.get('/admin/all', [auth, authorize('admin')], async (req, res) => {
       location,
       type,
       search,
+      companyId,
       status,
       page = 1,
       limit = 10,
@@ -84,6 +87,7 @@ router.get('/admin/all', [auth, authorize('admin')], async (req, res) => {
 
     // Add filters
     if (category) query.categoryId = category;
+    if (companyId) query.companyId = companyId;
     if (location) query.location = new RegExp(location, 'i');
     if (type) query.employmentType = type;
     if (status) query.status = status;

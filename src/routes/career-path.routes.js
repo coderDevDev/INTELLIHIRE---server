@@ -21,91 +21,114 @@ const validate = (req, res, next) => {
 // Get all career paths with AI-powered recommendations (authenticated)
 router.get('/', [auth, authorize('applicant')], async (req, res) => {
   try {
-    const {
-      category,
-      level,
-      difficulty,
-      limit = 20,
-      page = 1,
-      aiEnabled = true
-    } = req.query;
-
-    // Get user's rich profile data (PDS + Resume)
-    const user = await User.findById(req.user._id);
-    const pds = await PdsExtractedData.findOne({ userId: req.user._id }).sort({
-      createdAt: -1
-    });
-    const resume = await Resume.findOne({ userId: req.user._id }).sort({
-      createdAt: -1
+    // Set timeout for the entire request
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Request timeout')), 30000); // 30 seconds
     });
 
-    // Build derived applicant profile
-    const derived = buildApplicantProfileFromPdsAndResume({
-      user,
-      pds,
-      resume
-    });
-
-    // Generate career paths using AI instead of fetching from database
-    let careerPaths = [];
-    if (aiEnabled === 'true' || aiEnabled === true) {
-      careerPaths = await generateCareerPathsWithAI(derived, {
+    const mainPromise = (async () => {
+      const {
         category,
         level,
         difficulty,
-        limit: parseInt(limit)
-      });
-    } else {
-      // Fallback to basic career paths if AI is disabled
-      careerPaths = getBasicCareerPaths();
-    }
+        limit = 3,
+        page = 1,
+        aiEnabled = true
+      } = req.query;
 
-    // Calculate match scores and add user progress
-    const pathsWithProgress = await Promise.all(
-      careerPaths.map(async path => {
-        // Algorithmic matching
-        const algorithmicScore = calculateCareerMatchScore(path, derived);
-        const userProgress = getUserProgress(path, derived);
-
-        let aiInsights = null;
-        if (aiEnabled === 'true' || aiEnabled === true) {
-          // AI-powered career analysis
-          aiInsights = await generateAICareerInsights(path, derived);
+      // Get user's rich profile data (PDS + Resume)
+      const user = await User.findById(req.user._id);
+      const pds = await PdsExtractedData.findOne({ userId: req.user._id }).sort(
+        {
+          createdAt: -1
         }
+      );
+      const resume = await Resume.findOne({ userId: req.user._id }).sort({
+        createdAt: -1
+      });
 
-        return {
-          ...path,
-          matchScore: aiInsights
-            ? Math.round(algorithmicScore * 0.6 + aiInsights.score * 0.4)
-            : algorithmicScore,
-          algorithmicScore,
-          aiScore: aiInsights?.score,
-          aiInsights,
-          userProgress,
-          isRecommended: algorithmicScore >= 70 || aiInsights?.score >= 70
-        };
-      })
-    );
+      // Build derived applicant profile
+      const derived = buildApplicantProfileFromPdsAndResume({
+        user,
+        pds,
+        resume
+      });
 
-    // Sort by match score (AI + Algorithmic combined)
-    const sortedPaths = pathsWithProgress.sort(
-      (a, b) => b.matchScore - a.matchScore
-    );
+      // Generate career paths using AI instead of fetching from database
+      let careerPaths = [];
+      if (aiEnabled === 'true' || aiEnabled === true) {
+        careerPaths = await generateCareerPathsWithAI(derived, {
+          category,
+          level,
+          difficulty,
+          limit: parseInt(limit)
+        });
+      } else {
+        // Fallback to basic career paths if AI is disabled
+        careerPaths = getBasicCareerPaths();
+      }
 
-    res.json({
-      careerPaths: sortedPaths,
-      totalPages: Math.ceil(sortedPaths.length / limit),
-      currentPage: parseInt(page),
-      total: sortedPaths.length,
-      userProfile: {
-        hasPds: !!pds,
-        hasResume: !!resume,
-        profileCompleteness: calculateProfileCompletenessFromDerived(derived),
-        currentSkills: derived.skills?.slice(0, 10) || [],
-        totalExperience: derived.totalYears || 0
-      },
-      aiEnabled: aiEnabled === 'true' || aiEnabled === true
-    });
+      // Calculate match scores and add user progress
+      // const pathsWithProgress = await Promise.all(
+      //   careerPaths.map(async path => {
+      //     // Algorithmic matching
+      //     const algorithmicScore = calculateCareerMatchScore(path, derived);
+      //     const userProgress = getUserProgress(path, derived);
+
+      //     let aiInsights = null;
+      //     if (aiEnabled === 'true' || aiEnabled === true) {
+      //       // AI-powered career analysis
+      //       aiInsights = await generateAICareerInsights(path, derived);
+      //     }
+
+      //     return {
+      //       ...path,
+      //       matchScore: aiInsights
+      //         ? Math.round(algorithmicScore * 0.6 + aiInsights.score * 0.4)
+      //         : algorithmicScore,
+      //       algorithmicScore,
+      //       aiScore: aiInsights?.score,
+      //       aiInsights,
+      //       userProgress,
+      //       isRecommended: algorithmicScore >= 70 || aiInsights?.score >= 70
+      //     };
+      //   })
+      // );
+
+      // Add basic match scores to career paths for sorting
+      const pathsWithScores = careerPaths.map(path => ({
+        ...path,
+        matchScore: calculateCareerMatchScore(path, derived),
+        algorithmicScore: calculateCareerMatchScore(path, derived),
+        aiScore: null,
+        aiInsights: null,
+        userProgress: 0,
+        isRecommended: calculateCareerMatchScore(path, derived) >= 70
+      }));
+
+      // Sort by match score
+      const sortedPaths = pathsWithScores.sort(
+        (a, b) => b.matchScore - a.matchScore
+      );
+
+      res.json({
+        careerPaths: sortedPaths,
+        totalPages: Math.ceil(sortedPaths.length / limit),
+        currentPage: parseInt(page),
+        total: sortedPaths.length,
+        userProfile: {
+          hasPds: !!pds,
+          hasResume: !!resume,
+          profileCompleteness: calculateProfileCompletenessFromDerived(derived),
+          currentSkills: derived.skills?.slice(0, 10) || [],
+          totalExperience: derived.totalYears || 0
+        },
+        aiEnabled: aiEnabled === 'true' || aiEnabled === true
+      });
+    })();
+
+    // Race between main promise and timeout
+    await Promise.race([mainPromise, timeoutPromise]);
   } catch (error) {
     console.error('Error fetching career paths:', error);
     res.status(500).json({
@@ -406,33 +429,27 @@ async function generateCareerPathsWithAI(applicant, options = {}) {
       atsKeywords: applicant.atsKeywords || []
     };
 
-    const prompt = `You are an AI Career Advisor generating personalized career paths for a candidate.  
-Based on their profile, suggest relevant career paths that match their skills, experience, and goals.
+    const prompt = `Generate ${
+      options.limit || 3
+    } personalized career paths for this candidate.
 
----
+## Candidate Profile
+Skills: ${candidateProfile.skills.slice(0, 10).join(', ')}
+Experience: ${candidateProfile.totalYearsExperience} years
+Education: ${candidateProfile.education.map(e => e.degree).join(', ')}
 
-## Candidate Profile (JSON)
-${JSON.stringify(candidateProfile, null, 2)}
-
----
-
-## Instructions
-Generate ${
-      options.limit || 10
-    } personalized career paths that match this candidate's profile.
-
-**Return ONLY a valid JSON array with this exact structure:**
+**Return ONLY a JSON array:**
 [
   {
-    "_id": "generated_id_1",
+    "_id": "generated_1",
     "title": "Senior Software Developer",
-    "description": "Lead development of complex software applications using modern technologies and best practices.",
+    "description": "Lead development of complex software applications.",
     "category": "Technology",
     "level": "Senior",
     "difficulty": "Medium",
-    "prerequisites": ["Bachelor's degree in Computer Science", "5+ years programming experience"],
-    "skills": ["JavaScript", "Python", "React", "Node.js", "AWS", "Docker"],
-    "certifications": ["AWS Certified Developer", "Google Cloud Professional"],
+    "prerequisites": ["Bachelor's degree", "5+ years experience"],
+    "skills": ["JavaScript", "Python", "React", "Node.js"],
+    "certifications": ["AWS Certified"],
     "averageSalary": {
       "entry": 80000,
       "mid": 120000,
@@ -441,35 +458,20 @@ Generate ${
     },
     "jobMarketDemand": "Very High",
     "growthPotential": "High",
-    "relatedJobs": ["Full Stack Developer", "Tech Lead", "Software Architect"],
+    "relatedJobs": ["Full Stack Developer", "Tech Lead"],
     "milestones": [
       {
-        "_id": "milestone_1",
+        "_id": "m1",
         "title": "Master Core Technologies",
-        "description": "Become proficient in primary programming languages and frameworks",
+        "description": "Learn primary programming languages",
         "estimatedTime": "3-6 months",
         "difficulty": "Medium"
-      },
-      {
-        "_id": "milestone_2", 
-        "title": "Lead Development Projects",
-        "description": "Take ownership of major development initiatives",
-        "estimatedTime": "6-12 months",
-        "difficulty": "High"
       }
     ],
     "isActive": true,
     "createdAt": "2024-01-01T00:00:00.000Z"
   }
-]
-
-**Requirements:**
-- Focus on career paths that match the candidate's current skills and experience level
-- Include realistic salary ranges based on experience level
-- Provide actionable milestones for each career path
-- Consider market demand and growth potential
-- Include relevant certifications and skills
-- Make descriptions detailed and specific`;
+]`;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
@@ -943,70 +945,22 @@ async function generateAICareerInsights(careerPath, applicant) {
       milestones: careerPath.milestones || []
     };
 
-    const prompt = `You are an AI Career Advisor analyzing a candidate's fit for a specific career path.  
-Evaluate how well the candidate matches this career path and provide personalized insights.
+    const prompt = `Analyze candidate fit for career path: ${careerPath.title}
 
----
+Candidate: ${candidateProfile.skills.slice(0, 5).join(', ')} | ${
+      candidateProfile.totalYearsExperience
+    } years exp
+Career: ${careerPath.skills.slice(0, 5).join(', ')} | ${careerPath.level} level
 
-## Candidate Profile (JSON)
-${JSON.stringify(candidateProfile, null, 2)}
-
----
-
-## Career Path Details (JSON)
-${JSON.stringify(careerData, null, 2)}
-
----
-
-## Instructions
-1. Analyze the candidate's fit for this career path (0-100 score)
-2. Identify skill gaps and learning opportunities
-3. Suggest career progression steps
-4. Highlight strengths and potential concerns
-5. Provide personalized recommendations
-
-**Scoring Criteria:**
-- **Skills Alignment (35%)**: How well do current skills match career path requirements?
-- **Experience Level (25%)**: Does experience level align with career path level?
-- **Education Match (20%)**: Does education background support this career path?
-- **Market Opportunity (10%)**: How good is the job market for this career path?
-- **Growth Potential (10%)**: Does this path offer good career growth?
-
-**Return ONLY a valid JSON object with this exact structure:**
+**Return ONLY JSON:**
 {
   "score": 78,
-  "reasons": [
-    "Strong technical skills match in programming and software development",
-    "24+ years experience exceeds senior level requirements",
-    "Bachelor's degree provides solid foundation",
-    "High market demand for senior developers"
-  ],
-  "skillGaps": [
-    "Cloud computing platforms (AWS, Azure)",
-    "Modern DevOps practices",
-    "AI/ML technologies"
-  ],
-  "learningRecommendations": [
-    "Complete AWS Cloud Practitioner certification",
-    "Learn Kubernetes and Docker for containerization",
-    "Take courses in machine learning fundamentals"
-  ],
-  "careerProgression": [
-    "Senior Software Developer (Current level)",
-    "Lead Developer (6-12 months)",
-    "Technical Architect (1-2 years)",
-    "Engineering Manager (2-3 years)"
-  ],
-  "strengths": [
-    "Extensive programming experience",
-    "Strong problem-solving skills",
-    "Leadership potential",
-    "Solid educational background"
-  ],
-  "concerns": [
-    "May need to update skills for modern technologies",
-    "Consider specialization in emerging areas"
-  ],
+  "reasons": ["Strong technical skills match", "Experience level aligns"],
+  "skillGaps": ["Cloud computing", "DevOps"],
+  "learningRecommendations": ["Complete AWS certification", "Learn Kubernetes"],
+  "careerProgression": ["Senior Developer", "Tech Lead", "Architect"],
+  "strengths": ["Programming experience", "Problem-solving"],
+  "concerns": ["May need modern tech updates"],
   "marketInsights": {
     "demand": "Very High",
     "salaryRange": "Competitive",

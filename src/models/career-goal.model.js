@@ -233,3 +233,4 @@ careerGoalSchema.methods.resolveChallenge = function (challengeIndex) {
 
 module.exports = mongoose.model('CareerGoal', careerGoalSchema);
 
+
