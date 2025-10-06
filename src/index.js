@@ -120,6 +120,10 @@ app.use('/api/matching', jobMatchingRoutes);
 app.use('/api/categories', jobCategoryRoutes);
 app.use('/api/career-paths', careerPathRoutes);
 
+app.get('/', (req, res) => {
+  res.send('Server is running');
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
