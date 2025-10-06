@@ -173,3 +173,6 @@ careerPathSchema.index({ createdAt: -1 });
 module.exports = mongoose.model('CareerPath', careerPathSchema);
 
 
+
+
+

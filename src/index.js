@@ -27,9 +27,6 @@ const careerPathRoutes = require('./routes/career-path.routes');
 const fs = require('fs');
 const pdf = require('pdf-parse');
 
-let dataBuffer = fs.readFileSync(
-  'C:\\Users\\ACER\\Desktop\\2025 Capstone Project\\INTELLIHIRE\\PDS.pdf'
-);
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { OpenAI } = require('openai');
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
