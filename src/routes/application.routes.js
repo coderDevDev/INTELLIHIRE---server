@@ -5,6 +5,9 @@ const { auth, authorize } = require('../middleware/auth.middleware');
 const Application = require('../models/application.model');
 const Job = require('../models/job.model');
 const Document = require('../models/document.model');
+const User = require('../models/user.model');
+const ApplicantRanking = require('../models/applicantRanking.model');
+const Company = require('../models/company.model');
 
 // Middleware for validation
 const validate = (req, res, next) => {
@@ -283,11 +286,24 @@ router.patch(
       'withdrawn'
     ]),
     body('notes').optional(),
+    body('interviewDate').optional(),
+    body('interviewLocation').optional(),
+    body('interviewType').optional(),
+    body('rejectionReason').optional(),
     validate
   ],
   async (req, res) => {
     try {
-      const application = await Application.findById(req.params.id);
+      const application = await Application.findById(req.params.id)
+        .populate('applicantId', 'email firstName lastName')
+        .populate('jobId', 'title companyId')
+        .populate({
+          path: 'jobId',
+          populate: {
+            path: 'companyId',
+            select: 'name'
+          }
+        });
 
       if (!application) {
         return res.status(404).json({ message: 'Application not found' });
@@ -303,10 +319,47 @@ router.patch(
         }
       }
 
+      // Update application
       application.status = req.body.status;
       if (req.body.notes) application.notes = req.body.notes;
+      if (req.body.interviewDate)
+        application.interviewDate = req.body.interviewDate;
+      if (req.body.interviewLocation)
+        application.interviewLocation = req.body.interviewLocation;
+      if (req.body.interviewType)
+        application.interviewType = req.body.interviewType;
+      if (req.body.rejectionReason)
+        application.rejectionReason = req.body.rejectionReason;
 
       await application.save();
+
+      // Send email notification to applicant
+      const emailService = require('../services/email.service');
+      const baseUrl = process.env.CLIENT_URL || 'http://localhost:3000';
+
+      try {
+        await emailService.sendApplicationStatusUpdate(
+          application.applicantId.email,
+          application.applicantId.firstName,
+          {
+            status: application.status,
+            jobTitle: application.jobId.title,
+            companyName: application.jobId.companyId.name,
+            notes: application.notes,
+            interviewDate: application.interviewDate,
+            interviewLocation: application.interviewLocation,
+            interviewType: application.interviewType,
+            rejectionReason: application.rejectionReason
+          },
+          baseUrl
+        );
+        console.log(
+          `✅ Status update email sent to ${application.applicantId.email}`
+        );
+      } catch (emailError) {
+        console.error('⚠️ Failed to send status update email:', emailError);
+        // Don't fail the request if email fails
+      }
 
       res.json(application);
     } catch (error) {
@@ -428,5 +481,326 @@ router.get(
     }
   }
 );
+
+// Export applicants for a specific job (admin/employer)
+router.get(
+  '/export/job/:jobId',
+  [auth, authorize('admin', 'employer')],
+  async (req, res) => {
+    try {
+      const { jobId } = req.params;
+      const { format = 'csv' } = req.query;
+
+      // Verify job exists
+      const job = await Job.findById(jobId).populate('companyId', 'name');
+      if (!job) {
+        return res.status(404).json({ message: 'Job not found' });
+      }
+
+      // If employer, verify they own this job
+      if (req.user.role === 'employer') {
+        const company = await Company.findOne({ adminId: req.user._id });
+        if (
+          !company ||
+          job.companyId._id.toString() !== company._id.toString()
+        ) {
+          return res
+            .status(403)
+            .json({
+              message: 'Not authorized to export applicants for this job'
+            });
+        }
+      }
+
+      // Get applications with populated data
+      const applications = await Application.find({ jobId })
+        .populate('applicantId', 'firstName lastName email phone address')
+        .populate('resumeId', 'title fileUrl')
+        .populate('pdsId', 'title fileUrl')
+        .sort('-createdAt');
+
+      if (format === 'csv') {
+        // Generate CSV
+        const csvHeader = [
+          'Applicant Name',
+          'Email',
+          'Phone',
+          'Address',
+          'Application Date',
+          'Status',
+          'Resume File',
+          'PDS File',
+          'Cover Letter',
+          'Notes'
+        ].join(',');
+
+        const csvRows = applications.map(app => {
+          const applicant = app.applicantId;
+          return [
+            `"${applicant.firstName} ${applicant.lastName}"`,
+            `"${applicant.email}"`,
+            `"${applicant.phone || ''}"`,
+            `"${applicant.address || ''}"`,
+            `"${new Date(app.createdAt).toLocaleDateString()}"`,
+            `"${app.status}"`,
+            `"${app.resumeId?.fileUrl || ''}"`,
+            `"${app.pdsId?.fileUrl || ''}"`,
+            `"${app.coverLetter || ''}"`,
+            `"${app.notes || ''}"`
+          ].join(',');
+        });
+
+        const csvContent = [csvHeader, ...csvRows].join('\n');
+
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader(
+          'Content-Disposition',
+          `attachment; filename="applicants-${job.title.replace(
+            /[^a-zA-Z0-9]/g,
+            '_'
+          )}-${new Date().toISOString().split('T')[0]}.csv"`
+        );
+        res.send(csvContent);
+      } else {
+        // Return JSON
+        res.json({
+          job: {
+            title: job.title,
+            company: job.companyId.name,
+            location: job.location
+          },
+          applications: applications.map(app => ({
+            applicantName: `${app.applicantId.firstName} ${app.applicantId.lastName}`,
+            email: app.applicantId.email,
+            phone: app.applicantId.phone,
+            address: app.applicantId.address,
+            applicationDate: app.createdAt,
+            status: app.status,
+            resumeFile: app.resumeId?.fileUrl,
+            pdsFile: app.pdsId?.fileUrl,
+            coverLetter: app.coverLetter,
+            notes: app.notes
+          }))
+        });
+      }
+    } catch (error) {
+      res.status(500).json({
+        message: 'Error exporting applicants',
+        error: error.message
+      });
+    }
+  }
+);
+
+// Export all applicants across all jobs (admin only)
+router.get('/export/all', [auth, authorize('admin')], async (req, res) => {
+  try {
+    const { format = 'csv', jobId, status, dateFrom, dateTo } = req.query;
+
+    // Build query
+    const query = {};
+    if (jobId) query.jobId = jobId;
+    if (status) query.status = status;
+    if (dateFrom || dateTo) {
+      query.createdAt = {};
+      if (dateFrom) query.createdAt.$gte = new Date(dateFrom);
+      if (dateTo) query.createdAt.$lte = new Date(dateTo);
+    }
+
+    // Get applications with populated data
+    const applications = await Application.find(query)
+      .populate('applicantId', 'firstName lastName email phone address')
+      .populate('jobId', 'title companyId location')
+      .populate({
+        path: 'jobId',
+        populate: {
+          path: 'companyId',
+          select: 'name'
+        }
+      })
+      .populate('resumeId', 'title fileUrl')
+      .populate('pdsId', 'title fileUrl')
+      .sort('-createdAt');
+
+    if (format === 'csv') {
+      // Generate CSV
+      const csvHeader = [
+        'Applicant Name',
+        'Email',
+        'Phone',
+        'Address',
+        'Job Title',
+        'Company',
+        'Job Location',
+        'Application Date',
+        'Status',
+        'Resume File',
+        'PDS File',
+        'Cover Letter',
+        'Notes'
+      ].join(',');
+
+      const csvRows = applications.map(app => {
+        const applicant = app.applicantId;
+        const job = app.jobId;
+        return [
+          `"${applicant.firstName} ${applicant.lastName}"`,
+          `"${applicant.email}"`,
+          `"${applicant.phone || ''}"`,
+          `"${applicant.address || ''}"`,
+          `"${job.title}"`,
+          `"${job.companyId.name}"`,
+          `"${job.location}"`,
+          `"${new Date(app.createdAt).toLocaleDateString()}"`,
+          `"${app.status}"`,
+          `"${app.resumeId?.fileUrl || ''}"`,
+          `"${app.pdsId?.fileUrl || ''}"`,
+          `"${app.coverLetter || ''}"`,
+          `"${app.notes || ''}"`
+        ].join(',');
+      });
+
+      const csvContent = [csvHeader, ...csvRows].join('\n');
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="all-applicants-${
+          new Date().toISOString().split('T')[0]
+        }.csv"`
+      );
+      res.send(csvContent);
+    } else {
+      // Return JSON
+      res.json({
+        applications: applications.map(app => ({
+          applicantName: `${app.applicantId.firstName} ${app.applicantId.lastName}`,
+          email: app.applicantId.email,
+          phone: app.applicantId.phone,
+          address: app.applicantId.address,
+          jobTitle: app.jobId.title,
+          company: app.jobId.companyId.name,
+          jobLocation: app.jobId.location,
+          applicationDate: app.createdAt,
+          status: app.status,
+          resumeFile: app.resumeId?.fileUrl,
+          pdsFile: app.pdsId?.fileUrl,
+          coverLetter: app.coverLetter,
+          notes: app.notes
+        }))
+      });
+    }
+  } catch (error) {
+    res.status(500).json({
+      message: 'Error exporting all applicants',
+      error: error.message
+    });
+  }
+});
+
+// Export ranked applicants (admin only)
+router.get('/export/rankings', [auth, authorize('admin')], async (req, res) => {
+  try {
+    const { format = 'csv', jobId, status, sortBy = 'rank' } = req.query;
+
+    // Build query
+    const query = {};
+    if (jobId) query.jobId = jobId;
+    if (status) query.status = status;
+
+    // Get rankings with populated data
+    const rankings = await ApplicantRanking.find(query)
+      .populate('applicantId', 'firstName lastName email phone address')
+      .populate('jobId', 'title companyId location')
+      .populate({
+        path: 'jobId',
+        populate: {
+          path: 'companyId',
+          select: 'name'
+        }
+      })
+      .sort(sortBy === 'rank' ? 'rank' : '-overallScore');
+
+    if (format === 'csv') {
+      // Generate CSV
+      const csvHeader = [
+        'Rank',
+        'Applicant Name',
+        'Email',
+        'Phone',
+        'Job Title',
+        'Company',
+        'Job Location',
+        'Overall Score',
+        'Algorithmic Score',
+        'Experience Score',
+        'Skills Match %',
+        'Education Score',
+        'Status',
+        'Match Reasons',
+        'Notes'
+      ].join(',');
+
+      const csvRows = rankings.map(ranking => {
+        const applicant = ranking.applicantId;
+        const job = ranking.jobId;
+        return [
+          ranking.rank,
+          `"${applicant.firstName} ${applicant.lastName}"`,
+          `"${applicant.email}"`,
+          `"${applicant.phone || ''}"`,
+          `"${job.title}"`,
+          `"${job.companyId.name}"`,
+          `"${job.location}"`,
+          ranking.overallScore,
+          ranking.algorithmicScore,
+          ranking.scoreBreakdown?.experience || 0,
+          ranking.scoreBreakdown?.skillsMatch || 0,
+          ranking.scoreBreakdown?.education || 0,
+          `"${ranking.status}"`,
+          `"${ranking.matchReasons?.join('; ') || ''}"`,
+          `"${ranking.notes || ''}"`
+        ].join(',');
+      });
+
+      const csvContent = [csvHeader, ...csvRows].join('\n');
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="ranked-applicants-${
+          jobId ? 'job-' + jobId : 'all'
+        }-${new Date().toISOString().split('T')[0]}.csv"`
+      );
+      res.send(csvContent);
+    } else {
+      // Return JSON
+      res.json({
+        rankings: rankings.map(ranking => ({
+          rank: ranking.rank,
+          applicantName: `${ranking.applicantId.firstName} ${ranking.applicantId.lastName}`,
+          email: ranking.applicantId.email,
+          phone: ranking.applicantId.phone,
+          jobTitle: ranking.jobId.title,
+          company: ranking.jobId.companyId.name,
+          jobLocation: ranking.jobId.location,
+          overallScore: ranking.overallScore,
+          algorithmicScore: ranking.algorithmicScore,
+          experienceScore: ranking.scoreBreakdown?.experience || 0,
+          skillsMatch: ranking.scoreBreakdown?.skillsMatch || 0,
+          educationScore: ranking.scoreBreakdown?.education || 0,
+          status: ranking.status,
+          matchReasons: ranking.matchReasons,
+          notes: ranking.notes
+        }))
+      });
+    }
+  } catch (error) {
+    res.status(500).json({
+      message: 'Error exporting ranked applicants',
+      error: error.message
+    });
+  }
+});
 
 module.exports = router;

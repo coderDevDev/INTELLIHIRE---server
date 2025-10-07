@@ -447,7 +447,7 @@ router.delete(
         }
       }
 
-      await job.remove();
+      await Job.findByIdAndDelete(req.params.id);
       res.json({ message: 'Job deleted successfully' });
     } catch (error) {
       res

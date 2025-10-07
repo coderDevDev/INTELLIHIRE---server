@@ -341,7 +341,7 @@ router.delete('/:id', [auth, authorize('admin')], async (req, res) => {
       }
     }
 
-    await user.remove();
+    await User.findByIdAndDelete(req.params.id);
     res.json({ message: 'User deleted successfully' });
   } catch (error) {
     res

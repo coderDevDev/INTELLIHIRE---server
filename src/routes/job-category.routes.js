@@ -167,7 +167,7 @@ router.delete('/:id', [auth, authorize('admin')], async (req, res) => {
       });
     }
 
-    await category.remove();
+    await JobCategory.findByIdAndDelete(req.params.id);
     res.json({ message: 'Job category deleted successfully' });
   } catch (error) {
     res

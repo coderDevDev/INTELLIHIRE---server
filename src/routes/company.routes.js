@@ -224,7 +224,7 @@ router.delete('/:id', [auth, authorize('admin')], async (req, res) => {
       }
     }
 
-    await company.remove();
+    await Company.findByIdAndDelete(req.params.id);
     res.json({ message: 'Company deleted successfully' });
   } catch (error) {
     res
