@@ -23,6 +23,14 @@ const analyticsRoutes = require('./routes/analytics.routes');
 const jobMatchingRoutes = require('./routes/job-matching.routes');
 const jobCategoryRoutes = require('./routes/job-category.routes');
 const careerPathRoutes = require('./routes/career-path.routes');
+const bannerRoutes = require('./routes/banner.routes');
+const bannerTemplateRoutes = require('./routes/bannerTemplate.routes');
+const bannerCategoryRoutes = require('./routes/bannerCategory.routes');
+const bannerTagRoutes = require('./routes/bannerTag.routes');
+const statsRoutes = require('./routes/stats.routes');
+const applicantRankingRoutes = require('./routes/applicantRanking.routes');
+const messageRoutes = require('./routes/message.routes');
+const conversationRoutes = require('./routes/conversation.routes');
 
 const fs = require('fs');
 const pdf = require('pdf-parse');
@@ -119,6 +127,14 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/matching', jobMatchingRoutes);
 app.use('/api/categories', jobCategoryRoutes);
 app.use('/api/career-paths', careerPathRoutes);
+app.use('/api/banners', bannerRoutes);
+app.use('/api/banner-templates', bannerTemplateRoutes);
+app.use('/api/banner-categories', bannerCategoryRoutes);
+app.use('/api/banner-tags', bannerTagRoutes);
+app.use('/api/stats', statsRoutes);
+app.use('/api/rankings', applicantRankingRoutes);
+app.use('/api/messages', messageRoutes);
+app.use('/api/conversations', conversationRoutes);
 
 app.get('/', (req, res) => {
   res.send('Server is running');

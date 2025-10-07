@@ -358,10 +358,201 @@ const sendWelcomeEmail = async (email, firstName, baseUrl) => {
   };
 };
 
+const sendEmailVerificationEmail = async (
+  email,
+  firstName,
+  verificationToken,
+  baseUrl
+) => {
+  const templateData = {
+    title: 'Verify Your Email',
+    firstName: firstName || 'User',
+    message: `Hi ${
+      firstName || 'there'
+    },<br><br>Thank you for registering with InteliHire! To complete your registration and start your journey, please verify your email address by clicking the button below.`,
+    ctaButton: {
+      text: 'Verify Email Address',
+      url: `${baseUrl}/verify-email/${verificationToken}`
+    },
+    infoBox: {
+      title: '⏰ Important',
+      text: 'This verification link will expire in 24 hours. Please verify your email soon to access all features.'
+    },
+    baseUrl: baseUrl,
+    year: new Date().getFullYear()
+  };
+
+  const html = passwordResetTemplate(templateData);
+
+  return {
+    to: email,
+    subject: '✅ Verify Your Email - InteliHire',
+    html
+  };
+};
+
+// Application Status Update Email Templates
+const sendApplicationStatusEmail = async (
+  email,
+  firstName,
+  applicationData,
+  baseUrl
+) => {
+  const {
+    status,
+    jobTitle,
+    companyName,
+    notes,
+    interviewDate,
+    interviewLocation,
+    interviewType,
+    rejectionReason
+  } = applicationData;
+
+  // Status-specific messages and styling
+  const statusConfig = {
+    applied: {
+      title: '📝 Application Received',
+      emoji: '📝',
+      color: '#3b82f6',
+      message: `Your application for <strong>${jobTitle}</strong> at <strong>${companyName}</strong> has been received and is under review.`,
+      ctaText: 'View Application',
+      ctaUrl: `${baseUrl}/dashboard/applicant/applications`
+    },
+    screening: {
+      title: '🔍 Application Under Review',
+      emoji: '🔍',
+      color: '#f59e0b',
+      message: `Good news! Your application for <strong>${jobTitle}</strong> at <strong>${companyName}</strong> is currently being reviewed by our team.`,
+      ctaText: 'View Application Status',
+      ctaUrl: `${baseUrl}/dashboard/applicant/applications`
+    },
+    interview: {
+      title: '🎉 Interview Invitation',
+      emoji: '🎉',
+      color: '#8b5cf6',
+      message: `Congratulations, ${firstName}! We are pleased to invite you for an interview for the <strong>${jobTitle}</strong> position at <strong>${companyName}</strong>.`,
+      ctaText: 'View Interview Details',
+      ctaUrl: `${baseUrl}/dashboard/applicant/applications`
+    },
+    offered: {
+      title: '🌟 Job Offer',
+      emoji: '🌟',
+      color: '#10b981',
+      message: `Fantastic news, ${firstName}! We are delighted to offer you the <strong>${jobTitle}</strong> position at <strong>${companyName}</strong>.`,
+      ctaText: 'View Offer Details',
+      ctaUrl: `${baseUrl}/dashboard/applicant/applications`
+    },
+    hired: {
+      title: '🎊 Welcome Aboard!',
+      emoji: '🎊',
+      color: '#059669',
+      message: `Congratulations, ${firstName}! Welcome to the <strong>${companyName}</strong> team as our new <strong>${jobTitle}</strong>. We look forward to working with you!`,
+      ctaText: 'Access Dashboard',
+      ctaUrl: `${baseUrl}/dashboard/applicant`
+    },
+    rejected: {
+      title: '📋 Application Update',
+      emoji: '📋',
+      color: '#6b7280',
+      message: `Thank you for your interest in the <strong>${jobTitle}</strong> position at <strong>${companyName}</strong>. After careful consideration, we have decided to move forward with other candidates.`,
+      ctaText: 'Browse More Jobs',
+      ctaUrl: `${baseUrl}/jobs`
+    },
+    withdrawn: {
+      title: '↩️ Application Withdrawn',
+      emoji: '↩️',
+      color: '#6b7280',
+      message: `Your application for <strong>${jobTitle}</strong> at <strong>${companyName}</strong> has been withdrawn as requested.`,
+      ctaText: 'Browse Jobs',
+      ctaUrl: `${baseUrl}/jobs`
+    }
+  };
+
+  const config = statusConfig[status] || statusConfig.applied;
+
+  const templateData = {
+    title: config.title,
+    message: `Hi ${firstName},<br><br>${config.message}`,
+    ctaButton: {
+      text: config.ctaText,
+      url: config.ctaUrl
+    },
+    baseUrl: baseUrl,
+    year: new Date().getFullYear()
+  };
+
+  // Add status notes if provided
+  if (notes) {
+    templateData.infoBox = {
+      title: '💬 Message from Recruiter',
+      text: notes
+    };
+  }
+
+  // Add interview details if status is interview
+  if (status === 'interview' && interviewDate) {
+    const interviewInfo = [];
+
+    if (interviewDate) {
+      const date = new Date(interviewDate);
+      interviewInfo.push(
+        `📅 <strong>Date & Time:</strong> ${date.toLocaleString('en-US', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })}`
+      );
+    }
+
+    if (interviewType) {
+      const typeLabel =
+        interviewType === 'in-person'
+          ? 'In-Person'
+          : interviewType === 'phone'
+          ? 'Phone Call'
+          : interviewType === 'video'
+          ? 'Video Call'
+          : interviewType;
+      interviewInfo.push(`🎥 <strong>Type:</strong> ${typeLabel}`);
+    }
+
+    if (interviewLocation) {
+      interviewInfo.push(`📍 <strong>Location:</strong> ${interviewLocation}`);
+    }
+
+    templateData.infoBox = {
+      title: '📅 Interview Details',
+      text: interviewInfo.join('<br>')
+    };
+  }
+
+  // Add rejection reason if status is rejected and reason provided
+  if (status === 'rejected' && rejectionReason) {
+    templateData.warningBox = {
+      title: '💡 Feedback',
+      text: rejectionReason
+    };
+  }
+
+  const html = passwordResetTemplate(templateData);
+
+  return {
+    to: email,
+    subject: `${config.emoji} ${config.title} - ${jobTitle} at ${companyName}`,
+    html
+  };
+};
+
 module.exports = {
   passwordResetTemplate,
   getPasswordResetEmailData,
   getWelcomeEmailData,
   sendPasswordResetEmail,
-  sendWelcomeEmail
+  sendWelcomeEmail,
+  sendEmailVerificationEmail,
+  sendApplicationStatusEmail
 };

@@ -189,6 +189,76 @@ router.post(
         $inc: { applicationCount: 1 }
       });
 
+      // Automatically calculate ranking for this applicant
+      try {
+        const ApplicantRanking = require('../models/applicantRanking.model');
+        console.log('🎯 Auto-calculating ranking for new application...');
+
+        // Calculate score for this specific application
+        const rankingData = await ApplicantRanking.calculateApplicantScore(
+          application
+        );
+
+        // Get existing rankings for this job to determine rank
+        const existingRankings = await ApplicantRanking.find({
+          jobId: req.body.jobId
+        }).sort({ overallScore: -1 });
+
+        // Calculate rank and percentile
+        const allScores = [
+          ...existingRankings.map(r => r.overallScore),
+          rankingData.overallScore
+        ];
+        allScores.sort((a, b) => b - a);
+        const rank = allScores.indexOf(rankingData.overallScore) + 1;
+        const totalApplicants = allScores.length;
+        const percentile = Math.round(
+          ((totalApplicants - rank + 1) / totalApplicants) * 100
+        );
+
+        // Create or update ranking
+        const existingRanking = await ApplicantRanking.findOne({
+          applicantId: req.user._id,
+          jobId: req.body.jobId
+        });
+
+        if (existingRanking) {
+          Object.assign(existingRanking, {
+            ...rankingData,
+            rank,
+            totalApplicants,
+            percentile
+          });
+          await existingRanking.save();
+        } else {
+          await ApplicantRanking.create({
+            ...rankingData,
+            rank,
+            totalApplicants,
+            percentile
+          });
+        }
+
+        // Update ranks for all other applicants
+        const updatedRankings = await ApplicantRanking.find({
+          jobId: req.body.jobId
+        }).sort({ overallScore: -1 });
+
+        for (let i = 0; i < updatedRankings.length; i++) {
+          updatedRankings[i].rank = i + 1;
+          updatedRankings[i].totalApplicants = updatedRankings.length;
+          updatedRankings[i].percentile = Math.round(
+            ((updatedRankings.length - i) / updatedRankings.length) * 100
+          );
+          await updatedRankings[i].save();
+        }
+
+        console.log('✅ Ranking calculated successfully');
+      } catch (rankingError) {
+        console.error('⚠️ Error calculating ranking:', rankingError);
+        // Don't fail the application submission if ranking fails
+      }
+
       res.status(201).json(application);
     } catch (error) {
       res

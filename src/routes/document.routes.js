@@ -1242,6 +1242,54 @@ router.post('/parse-pds/:id', [auth, authorize('admin')], async (req, res) => {
   }
 });
 
+// Get latest resume by user ID (admin only) - MUST be BEFORE /resume/:documentId to avoid route conflict
+router.get(
+  '/resume/user/:userId',
+  [auth, authorize('admin', 'employer')],
+  async (req, res) => {
+    try {
+      const { userId } = req.params;
+
+      console.log(`🔍 Admin fetching resume for user: ${userId}`);
+
+      // Find the latest saved resume for this user
+      const resume = await Resume.findOne({
+        userId: userId
+      }).sort({ createdAt: -1 });
+
+      if (!resume) {
+        console.log(`❌ No saved resume found for user: ${userId}`);
+        return res.status(404).json({
+          success: false,
+          message: 'No saved resume found for this applicant.',
+          userId
+        });
+      }
+
+      console.log(`✅ Found saved resume with ID: ${resume._id}`);
+      console.log(`📊 Resume ATS Score: ${resume.metadata?.atsScore || 'N/A'}`);
+
+      res.json({
+        success: true,
+        resumeData: resume.resumeData,
+        metadata: resume.metadata,
+        variants: resume.variants,
+        optimizedForJobs: resume.optimizedForJobs,
+        status: resume.status,
+        createdAt: resume.createdAt,
+        updatedAt: resume.updatedAt
+      });
+    } catch (error) {
+      console.error('Error fetching user resume:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch resume',
+        error: error.message
+      });
+    }
+  }
+);
+
 // Get saved resume for a document
 router.get('/resume/:documentId', auth, async (req, res) => {
   try {

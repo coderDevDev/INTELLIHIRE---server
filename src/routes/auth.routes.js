@@ -17,18 +17,7 @@ const validate = (req, res, next) => {
 // Register new user
 router.post(
   '/register',
-  [
-    body('email').isEmail().normalizeEmail(),
-    body('password').isLength({ min: 6 }),
-    body('role').isIn(['applicant', 'admin', 'employer']),
-    body('firstName').notEmpty(),
-    body('lastName').notEmpty(),
-    body('phone').notEmpty(),
-    body('address').notEmpty(),
-    body('gender').notEmpty(),
-    body('dob').notEmpty(),
-    validate
-  ],
+
   async (req, res) => {
     try {
       const {
@@ -49,6 +38,13 @@ router.post(
         return res.status(400).json({ message: 'User already exists' });
       }
 
+      // Generate email verification token
+      const verificationToken = jwt.sign(
+        { userId: email, email },
+        process.env.JWT_SECRET || 'your-secret-key',
+        { expiresIn: '24h' }
+      );
+
       // Create new user
       const user = new User({
         email,
@@ -59,36 +55,34 @@ router.post(
         phoneNumber: phone,
         address: { street: address },
         gender,
-        dob: new Date(dob)
+        dob: dob ? new Date(dob) : undefined,
+        isVerified: false,
+        emailVerificationToken: verificationToken,
+        emailVerificationExpires: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
       });
 
       await user.save();
 
-      // Generate JWT token
-      const token = jwt.sign(
-        { userId: user._id, role: user.role },
-        process.env.JWT_SECRET || 'your-secret-key',
-        { expiresIn: '24h' }
+      // Send verification email
+      const baseUrl = process.env.CLIENT_URL || 'http://localhost:3000';
+      await emailService.sendEmailVerification(
+        email,
+        firstName,
+        verificationToken,
+        baseUrl
       );
 
-      // Send welcome email (async, don't wait for it)
-      emailService.sendWelcome(email, firstName).catch(error => {
-        console.error('Failed to send welcome email:', error.message);
-      });
-
       res.status(201).json({
-        message: 'User registered successfully',
-        token,
+        message:
+          'Registration successful! Please check your email to verify your account.',
+        requiresVerification: true,
         user: {
           id: user._id,
           email: user.email,
           role: user.role,
           firstName: user.firstName,
           lastName: user.lastName,
-          phoneNumber: user.phoneNumber,
-          address: user.address,
-          gender: user.gender,
-          dob: user.dob
+          isVerified: false
         }
       });
     } catch (error) {
@@ -98,6 +92,135 @@ router.post(
     }
   }
 );
+
+// Verify email
+router.get('/verify-email/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+
+    // Verify token
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET || 'your-secret-key'
+    );
+
+    // Find user
+    const user = await User.findOne({ email: decoded.email });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Check if already verified
+    if (user.isVerified) {
+      return res.json({
+        success: true,
+        message: 'Email already verified',
+        alreadyVerified: true
+      });
+    }
+
+    // Check if token matches and not expired
+    if (user.emailVerificationToken !== token) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid verification token'
+      });
+    }
+
+    if (user.emailVerificationExpires < new Date()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Verification token has expired',
+        expired: true
+      });
+    }
+
+    // Verify user
+    user.isVerified = true;
+    user.emailVerificationToken = undefined;
+    user.emailVerificationExpires = undefined;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Email verified successfully! You can now log in.',
+      user: {
+        id: user._id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        isVerified: true
+      }
+    });
+  } catch (error) {
+    if (
+      error.name === 'JsonWebTokenError' ||
+      error.name === 'TokenExpiredError'
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired verification token',
+        expired: true
+      });
+    }
+    res.status(500).json({
+      success: false,
+      message: 'Error verifying email',
+      error: error.message
+    });
+  }
+});
+
+// Resend verification email
+router.post('/resend-verification', async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user.isVerified) {
+      return res.status(400).json({ message: 'Email already verified' });
+    }
+
+    // Generate new verification token
+    const verificationToken = jwt.sign(
+      { userId: user._id, email: user.email },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '24h' }
+    );
+
+    user.emailVerificationToken = verificationToken;
+    user.emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await user.save();
+
+    // Send verification email
+    const baseUrl = process.env.CLIENT_URL || 'http://localhost:3000';
+    await emailService.sendEmailVerification(
+      email,
+      user.firstName,
+      verificationToken,
+      baseUrl
+    );
+
+    res.json({
+      success: true,
+      message: 'Verification email sent successfully'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error resending verification email',
+      error: error.message
+    });
+  }
+});
 
 // Login user
 router.post(
@@ -123,6 +246,16 @@ router.post(
       const isMatch = await user.comparePassword(password);
       if (!isMatch) {
         return res.status(401).json({ message: 'Invalid credentials' });
+      }
+
+      // Check if email is verified
+      if (!user.isVerified) {
+        return res.status(403).json({
+          message:
+            'Please verify your email address before logging in. Check your inbox for the verification link.',
+          requiresVerification: true,
+          email: user.email
+        });
       }
 
       // Update last login
