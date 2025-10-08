@@ -128,7 +128,8 @@ router.post(
     auth,
     authorize('applicant'),
     body('jobId').notEmpty(),
-    body('resumeId').notEmpty(),
+    // At least one of resumeId or pdsId must be provided
+    // Validation will be done in the route handler based on job type
     validate
   ],
   async (req, res) => {
@@ -138,7 +139,7 @@ router.post(
         _id: req.body.jobId,
         status: 'active',
         expiryDate: { $gt: new Date() }
-      });
+      }).populate('companyId', 'isGovernment');
 
       // if (!job) {
       //   return res.status(400).json({ message: 'Job not found or not active' });
@@ -154,6 +155,22 @@ router.post(
         return res
           .status(400)
           .json({ message: 'You have already applied for this job' });
+      }
+
+      // Validate required documents based on job type
+      const isGovernmentJob = job?.companyId?.isGovernment || false;
+
+      if (isGovernmentJob && !req.body.pdsId) {
+        return res.status(400).json({
+          message:
+            'PDS (Personal Data Sheet) is required for government job applications'
+        });
+      }
+
+      if (!isGovernmentJob && !req.body.resumeId) {
+        return res.status(400).json({
+          message: 'Resume/CV is required for this job application'
+        });
       }
 
       // Verify documents belong to user
@@ -504,11 +521,9 @@ router.get(
           !company ||
           job.companyId._id.toString() !== company._id.toString()
         ) {
-          return res
-            .status(403)
-            .json({
-              message: 'Not authorized to export applicants for this job'
-            });
+          return res.status(403).json({
+            message: 'Not authorized to export applicants for this job'
+          });
         }
       }
 

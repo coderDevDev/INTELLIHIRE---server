@@ -70,3 +70,4 @@ bannerTagSchema.statics.decrementUsage = function (tagId) {
 };
 
 module.exports = mongoose.model('BannerTag', bannerTagSchema);
+

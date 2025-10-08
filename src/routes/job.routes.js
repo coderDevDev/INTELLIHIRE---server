@@ -50,7 +50,7 @@ router.get('/', async (req, res) => {
       .sort(sort)
       .skip((page - 1) * limit)
       .limit(parseInt(limit))
-      .populate('companyId', 'name logo')
+      .populate('companyId', 'name logo isGovernment')
       .populate('categoryId', 'name');
 
     const total = await Job.countDocuments(query);
@@ -102,7 +102,7 @@ router.get('/admin/all', [auth, authorize('admin')], async (req, res) => {
       .sort(sort)
       .skip((page - 1) * limit)
       .limit(parseInt(limit))
-      .populate('companyId', 'name logo')
+      .populate('companyId', 'name logo isGovernment')
       .populate('categoryId', 'name');
 
     const total = await Job.countDocuments(query);
@@ -182,7 +182,7 @@ router.get(
 
       // Get jobs
       const jobs = await Job.find(query)
-        .populate('companyId', 'name logo')
+        .populate('companyId', 'name logo isGovernment')
         .populate('categoryId', 'name')
         .limit(parseInt(limit));
 
@@ -266,7 +266,7 @@ router.get('/featured/list', async (req, res) => {
     })
       .sort('-postedDate')
       .limit(6)
-      .populate('companyId', 'name logo')
+      .populate('companyId', 'name logo isGovernment')
       .populate('categoryId', 'name');
 
     res.json(jobs);
@@ -292,7 +292,7 @@ router.get('/government/list', async (req, res) => {
     })
       .sort('-postedDate')
       .limit(4)
-      .populate('companyId', 'name logo')
+      .populate('companyId', 'name logo isGovernment')
       .populate('categoryId', 'name');
 
     res.json(jobs);
@@ -318,7 +318,7 @@ router.get('/saved', [auth, authorize('applicant')], async (req, res) => {
       _id: { $in: user.savedJobs },
       status: 'active'
     })
-      .populate('companyId', 'name logo')
+      .populate('companyId', 'name logo isGovernment')
       .populate('categoryId', 'name');
 
     res.json({ savedJobs });
@@ -334,7 +334,10 @@ router.get('/saved', [auth, authorize('applicant')], async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const job = await Job.findById(req.params.id)
-      .populate('companyId', 'name logo description industry website')
+      .populate(
+        'companyId',
+        'name logo description industry website isGovernment'
+      )
       .populate('categoryId', 'name');
 
     if (!job) {

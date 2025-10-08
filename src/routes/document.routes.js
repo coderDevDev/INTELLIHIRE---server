@@ -903,6 +903,337 @@ Return ONLY the JSON object as output.`;
       }
     }
 
+    // --- Resume/CV processing with GoogleGenerativeAI ---
+    if (doc.type === 'resume' && req.file.mimetype === 'application/pdf') {
+      const pdf = require('pdf-parse');
+      const { GoogleGenerativeAI } = require('@google/generative-ai');
+      const outputDir = path.join('uploads', 'resume', doc._id.toString());
+
+      if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir, { recursive: true });
+      }
+
+      try {
+        console.log('📄 Starting Resume/CV PDF processing...');
+
+        // Read PDF file and extract text
+        const dataBuffer = fs.readFileSync(req.file.path);
+        const pdfData = await pdf(dataBuffer);
+        const rawText = pdfData.text;
+
+        console.log(
+          `✅ Extracted text from Resume/CV (${rawText.length} characters)`
+        );
+
+        // Initialize GoogleGenerativeAI
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+
+        // Create the prompt for Resume parsing and extraction
+        const extractPrompt = `
+You are an expert Resume/CV parser and ATS specialist. Extract all information from the following resume text and convert it into a structured JSON format.
+
+Extract and organize the information into these sections:
+- personal_information (name, contact details, address, professional title/headline)
+- professional_summary (career summary or objective statement)
+- work_experience (job history with positions, companies, dates, responsibilities, achievements)
+- education (degrees, institutions, graduation dates, honors)
+- skills (technical skills, soft skills, languages, tools, technologies)
+- certifications (professional certifications and licenses)
+- projects (if any)
+- awards_and_honors (if any)
+- volunteer_work (if any)
+- references (if any)
+
+Return the data in this JSON structure:
+{
+  "personal_information": {
+    "full_name": "string",
+    "email": "string",
+    "phone": "string",
+    "address": "string",
+    "linkedin": "string",
+    "portfolio": "string",
+    "professional_title": "string"
+  },
+  "professional_summary": "string",
+  "work_experience": [
+    {
+      "position": "string",
+      "company": "string",
+      "location": "string",
+      "start_date": "MM/YYYY",
+      "end_date": "MM/YYYY or Present",
+      "responsibilities": ["string"],
+      "achievements": ["string"]
+    }
+  ],
+  "education": [
+    {
+      "degree": "string",
+      "institution": "string",
+      "location": "string",
+      "graduation_year": "YYYY",
+      "gpa": "string",
+      "honors": "string"
+    }
+  ],
+  "technical_skills": {
+    "programming_languages": ["string"],
+    "frameworks_libraries": ["string"],
+    "tools_platforms": ["string"],
+    "databases": ["string"],
+    "other": ["string"]
+  },
+  "soft_skills": ["string"],
+  "languages": [
+    {
+      "language": "string",
+      "proficiency": "string"
+    }
+  ],
+  "certifications": [
+    {
+      "name": "string",
+      "issuer": "string",
+      "date_obtained": "MM/YYYY",
+      "credential_id": "string"
+    }
+  ],
+  "projects": [
+    {
+      "name": "string",
+      "description": "string",
+      "technologies": ["string"],
+      "link": "string"
+    }
+  ],
+  "awards_honors": ["string"],
+  "volunteer_work": [
+    {
+      "organization": "string",
+      "role": "string",
+      "duration": "string",
+      "description": "string"
+    }
+  ],
+  "references": [
+    {
+      "name": "string",
+      "title": "string",
+      "company": "string",
+      "phone": "string",
+      "email": "string"
+    }
+  ]
+}
+
+Resume text to parse:
+
+${rawText}
+
+Return ONLY the JSON object as output.`;
+
+        console.log('🤖 Processing Resume with GoogleGenerativeAI...');
+
+        // Generate content using Gemini
+        const extractResult = await model.generateContent(extractPrompt);
+        const extractResponseText = extractResult.response.text();
+
+        console.log('✅ Received extraction response from Gemini');
+
+        // Parse the JSON response
+        let extractedData;
+        try {
+          const jsonMatch = extractResponseText.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            extractedData = JSON.parse(jsonMatch[0]);
+          } else {
+            extractedData = JSON.parse(extractResponseText);
+          }
+        } catch (parseError) {
+          console.error(
+            '⚠️ Failed to parse Gemini response as JSON:',
+            parseError
+          );
+          console.error('Raw response:', extractResponseText);
+          throw new Error('Failed to parse resume data from AI response');
+        }
+
+        console.log('✅ Successfully extracted resume data');
+
+        // Save extracted data
+        const extractedDataPath = path.join(outputDir, 'extracted_data.json');
+        fs.writeFileSync(
+          extractedDataPath,
+          JSON.stringify(extractedData, null, 2),
+          'utf-8'
+        );
+
+        // Now generate ATS-optimized version
+        console.log('🤖 Generating ATS-Optimized Resume...');
+
+        const atsPrompt = `
+You are an ATS (Applicant Tracking System) optimization expert. Create an ATS-compliant, professionally formatted resume from the following extracted resume data.
+
+Guidelines for ATS optimization:
+1. Use clear, standard section headings (e.g., "Professional Experience", "Education", "Skills")
+2. Include industry-relevant keywords and action verbs
+3. Format dates consistently (MM/YYYY format)
+4. Use bullet points for achievements (start with strong action verbs)
+5. Quantify achievements where possible (numbers, percentages, metrics)
+6. Optimize professional summary with target keywords
+7. Group skills by category for better parsing
+8. Ensure proper formatting for ATS parsing (avoid tables, images, complex formatting)
+
+Extracted resume data:
+${JSON.stringify(extractedData, null, 2)}
+
+Generate an ATS-optimized resume in this JSON structure:
+{
+  "personalInfo": {
+    "fullName": "string",
+    "professionalTitle": "string",
+    "email": "string",
+    "phone": "string",
+    "address": "string",
+    "linkedin": "string",
+    "portfolio": "string"
+  },
+  "professionalSummary": "ATS-optimized professional summary with keywords (2-3 sentences)",
+  "coreCompetencies": ["skill1", "skill2", "skill3"],
+  "workExperience": [
+    {
+      "position": "string",
+      "company": "string",
+      "location": "string",
+      "startDate": "MM/YYYY",
+      "endDate": "MM/YYYY or Present",
+      "achievements": [
+        "Achievement 1 with quantifiable results",
+        "Achievement 2 with impact metrics",
+        "Achievement 3 highlighting skills"
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "string",
+      "institution": "string",
+      "location": "string",
+      "graduationYear": "YYYY",
+      "honors": "string"
+    }
+  ],
+  "technicalSkills": {
+    "programmingLanguages": ["string"],
+    "frameworksLibraries": ["string"],
+    "toolsPlatforms": ["string"],
+    "databases": ["string"],
+    "other": ["string"]
+  },
+  "certifications": [
+    {
+      "name": "string",
+      "issuer": "string",
+      "dateObtained": "MM/YYYY",
+      "credentialId": "string"
+    }
+  ],
+  "projects": [
+    {
+      "name": "string",
+      "description": "string",
+      "technologies": ["string"],
+      "link": "string"
+    }
+  ],
+  "atsOptimization": {
+    "atsScore": 85,
+    "keywordDensity": "Optimal",
+    "suggestions": ["suggestion1", "suggestion2"],
+    "industryKeywords": ["keyword1", "keyword2"]
+  },
+  "metadata": {
+    "generatedAt": "${new Date().toISOString()}",
+    "sourceType": "uploaded_resume",
+    "optimizationLevel": "professional",
+    "keywordCount": 45
+  }
+}
+
+Return ONLY the JSON object as output.`;
+
+        const atsResult = await model.generateContent(atsPrompt);
+        const atsResponseText = atsResult.response.text();
+
+        console.log('✅ Received ATS-optimized resume from Gemini');
+
+        // Parse the ATS-optimized resume
+        let atsResumeData;
+        try {
+          const jsonMatch = atsResponseText.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            atsResumeData = JSON.parse(jsonMatch[0]);
+          } else {
+            atsResumeData = JSON.parse(atsResponseText);
+          }
+        } catch (parseError) {
+          console.error(
+            '⚠️ Failed to parse ATS resume response as JSON:',
+            parseError
+          );
+          console.error('Raw response:', atsResponseText);
+          throw new Error('Failed to parse ATS resume from AI response');
+        }
+
+        console.log('✅ Successfully generated ATS-optimized resume');
+
+        // Save ATS-optimized resume
+        const atsResumePath = path.join(outputDir, 'ats_resume.json');
+        fs.writeFileSync(
+          atsResumePath,
+          JSON.stringify(atsResumeData, null, 2),
+          'utf-8'
+        );
+
+        // Save to Resume model in database
+        const resume = await Resume.create({
+          userId: doc.userId,
+          documentId: doc._id,
+          resumeData: atsResumeData,
+          metadata: {
+            generatedAt: new Date(),
+            atsOptimized: true,
+            sourceType: 'uploaded_resume',
+            targetIndustry: 'General',
+            targetRole: 'Professional',
+            keywordCount: atsResumeData.metadata?.keywordCount || 0,
+            atsScore: atsResumeData.atsOptimization?.atsScore || 0
+          },
+          status: 'generated'
+        });
+
+        console.log('✅ ATS-optimized resume saved with ID:', resume._id);
+        console.log(
+          '📊 Resume ATS Score:',
+          atsResumeData.atsOptimization?.atsScore || 'N/A'
+        );
+
+        // Save extracted data to document for reference
+        doc.parsedData = extractedData;
+        await doc.save();
+
+        console.log('✅ Successfully processed Resume/CV');
+      } catch (error) {
+        console.error('❌ Error processing Resume/CV:', error);
+        // Don't fail the entire upload if resume processing fails
+        console.log(
+          '⚠️ Continuing with document upload despite Resume/CV processing error'
+        );
+      }
+    }
+
     res.status(201).json(doc);
   } catch (error) {
     console.log({ error });
