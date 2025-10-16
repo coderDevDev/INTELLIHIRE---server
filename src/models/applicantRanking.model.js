@@ -40,7 +40,7 @@ const applicantRankingSchema = new mongoose.Schema(
       max: 100
     },
 
-    // Detailed scoring breakdown
+    // Detailed scoring breakdown (old - kept for backward compatibility)
     scoringBreakdown: {
       experienceScore: {
         type: Number,
@@ -67,6 +67,100 @@ const applicantRankingSchema = new mongoose.Schema(
         min: 0,
         max: 100
       }
+    },
+
+    // NEW: PDS Score Breakdown
+    pdsScoreBreakdown: {
+      totalScore: Number,
+      maxPossibleScore: Number,
+      percentage: Number,
+      criteriaScores: {
+        education: {
+          label: String,
+          earnedPoints: Number,
+          maxPoints: Number,
+          weight: Number,
+          percentage: Number,
+          matchedCriteria: String,
+          details: String,
+          enabled: Boolean
+        },
+        experience: {
+          label: String,
+          earnedPoints: Number,
+          maxPoints: Number,
+          weight: Number,
+          percentage: Number,
+          matchedCriteria: String,
+          details: String,
+          enabled: Boolean
+        },
+        training: {
+          label: String,
+          earnedPoints: Number,
+          maxPoints: Number,
+          weight: Number,
+          percentage: Number,
+          matchedCriteria: String,
+          details: String,
+          enabled: Boolean
+        },
+        eligibility: {
+          label: String,
+          earnedPoints: Number,
+          maxPoints: Number,
+          weight: Number,
+          percentage: Number,
+          matchedCriteria: String,
+          details: String,
+          enabled: Boolean
+        },
+        skills: {
+          label: String,
+          earnedPoints: Number,
+          maxPoints: Number,
+          weight: Number,
+          percentage: Number,
+          matchedCriteria: String,
+          details: String,
+          enabled: Boolean
+        },
+        awards: {
+          label: String,
+          earnedPoints: Number,
+          maxPoints: Number,
+          weight: Number,
+          percentage: Number,
+          matchedCriteria: String,
+          details: String,
+          enabled: Boolean
+        },
+        relevantExperience: {
+          label: String,
+          earnedPoints: Number,
+          maxPoints: Number,
+          weight: Number,
+          percentage: Number,
+          matchedCriteria: String,
+          details: String,
+          enabled: Boolean
+        },
+        certifications: {
+          label: String,
+          earnedPoints: Number,
+          maxPoints: Number,
+          weight: Number,
+          percentage: Number,
+          matchedCriteria: String,
+          details: String,
+          enabled: Boolean
+        }
+      },
+      scoringSystemUsed: {
+        type: String,
+        enum: ['default', 'company-custom', 'job-custom']
+      },
+      calculatedAt: Date
     },
 
     // Match analysis
@@ -300,7 +394,23 @@ applicantRankingSchema.statics.calculateApplicantScore = async function (
     resume
   });
 
-  // Calculate algorithmic score
+  // NEW: Calculate PDS Score using customizable scoring system
+  const PDSScoringService = require('../services/pdsScoring.service');
+  const scoringService = new PDSScoringService();
+  
+  // Get job with company populated for scoring config
+  const Job = require('./job.model');
+  const job = await Job.findById(jobId).populate('companyId');
+  
+  let pdsBreakdown = null;
+  try {
+    pdsBreakdown = await scoringService.calculatePDSScore(applicantProfile, job);
+  } catch (error) {
+    console.error('Error calculating PDS score:', error);
+    // Fallback to basic scoring if PDS scoring fails
+  }
+
+  // Calculate algorithmic score (kept for backward compatibility)
   const algorithmicScore = await this.calculateAlgorithmicScore(
     jobId,
     applicantProfile
@@ -309,8 +419,10 @@ applicantRankingSchema.statics.calculateApplicantScore = async function (
   // Calculate AI score using Gemini
   const aiScore = await this.calculateAIScore(jobId, applicantProfile);
 
-  // Combine scores (50% algorithmic + 50% AI)
-  const overallScore = Math.round(algorithmicScore * 0.5 + aiScore.score * 0.5);
+  // Use PDS score as primary, fallback to combined score
+  const overallScore = pdsBreakdown 
+    ? Math.round(pdsBreakdown.totalScore)
+    : Math.round(algorithmicScore * 0.5 + aiScore.score * 0.5);
 
   return {
     applicantId,
@@ -319,6 +431,7 @@ applicantRankingSchema.statics.calculateApplicantScore = async function (
     overallScore,
     algorithmicScore,
     aiScore: aiScore.score,
+    // OLD scoring breakdown (backward compatibility)
     scoringBreakdown: {
       experienceScore: aiScore.scoringBreakdown?.experience || 0,
       skillsScore: aiScore.scoringBreakdown?.skills || 0,
@@ -326,6 +439,8 @@ applicantRankingSchema.statics.calculateApplicantScore = async function (
       locationScore: aiScore.scoringBreakdown?.location || 0,
       atsKeywordsScore: aiScore.scoringBreakdown?.atsKeywords || 0
     },
+    // NEW: PDS Score Breakdown
+    pdsScoreBreakdown: pdsBreakdown || null,
     matchReasons: aiScore.reasons || [],
     concerns: aiScore.concerns || [],
     strengths: aiScore.strengths || []

@@ -27,9 +27,113 @@ const companySchema = new mongoose.Schema(
       type: Boolean,
       default: false
     },
+    verificationNotes: String,
+    verificationDate: Date,
+    verificationDocuments: [{
+      type: String  // URLs to uploaded documents
+    }],
     adminId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User'
+    },
+    // PDS Scoring Configuration (customizable per company)
+    scoringConfig: {
+      education: {
+        label: String,
+        maxPoints: Number,
+        weight: Number,
+        enabled: Boolean,
+        description: String,
+        subCriteria: [{
+          name: String,
+          points: Number,
+          description: String
+        }]
+      },
+      experience: {
+        label: String,
+        maxPoints: Number,
+        weight: Number,
+        enabled: Boolean,
+        description: String,
+        subCriteria: [{
+          name: String,
+          points: Number,
+          description: String
+        }]
+      },
+      training: {
+        label: String,
+        maxPoints: Number,
+        weight: Number,
+        enabled: Boolean,
+        description: String,
+        subCriteria: [{
+          name: String,
+          points: Number,
+          description: String
+        }]
+      },
+      eligibility: {
+        label: String,
+        maxPoints: Number,
+        weight: Number,
+        enabled: Boolean,
+        description: String,
+        subCriteria: [{
+          name: String,
+          points: Number,
+          description: String
+        }]
+      },
+      skills: {
+        label: String,
+        maxPoints: Number,
+        weight: Number,
+        enabled: Boolean,
+        description: String,
+        subCriteria: [{
+          name: String,
+          points: Number,
+          description: String
+        }]
+      },
+      awards: {
+        label: String,
+        maxPoints: Number,
+        weight: Number,
+        enabled: Boolean,
+        description: String,
+        subCriteria: [{
+          name: String,
+          points: Number,
+          description: String
+        }]
+      },
+      relevantExperience: {
+        label: String,
+        maxPoints: Number,
+        weight: Number,
+        enabled: Boolean,
+        description: String,
+        subCriteria: [{
+          name: String,
+          points: Number,
+          description: String
+        }]
+      },
+      certifications: {
+        label: String,
+        maxPoints: Number,
+        weight: Number,
+        enabled: Boolean,
+        description: String,
+        subCriteria: [{
+          name: String,
+          points: Number,
+          description: String
+        }]
+      }
     }
   },
   {

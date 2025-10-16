@@ -122,9 +122,12 @@ router.put(
         'lastName',
         'phoneNumber',
         'address',
+        'gender',
+        'dob',
         'experience',
         'education',
-        'certification'
+        'certification',
+        'profilePicture'
       ];
 
       allowedFields.forEach(field => {
