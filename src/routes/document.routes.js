@@ -933,12 +933,14 @@ Return ONLY the JSON object as output.`;
         const extractPrompt = `
 You are an expert Resume/CV parser and ATS specialist. Extract all information from the following resume text and convert it into a structured JSON format.
 
+**IMPORTANT**: Only extract skills that are ACTUALLY present in the resume. Do NOT invent or assume technical skills.
+
 Extract and organize the information into these sections:
 - personal_information (name, contact details, address, professional title/headline)
 - professional_summary (career summary or objective statement)
 - work_experience (job history with positions, companies, dates, responsibilities, achievements)
 - education (degrees, institutions, graduation dates, honors)
-- skills (technical skills, soft skills, languages, tools, technologies)
+- skills (ONLY extract skills explicitly mentioned in the resume - for non-technical resumes, focus on soft skills, languages, and professional competencies)
 - certifications (professional certifications and licenses)
 - projects (if any)
 - awards_and_honors (if any)
@@ -979,11 +981,11 @@ Return the data in this JSON structure:
     }
   ],
   "technical_skills": {
-    "programming_languages": ["string"],
-    "frameworks_libraries": ["string"],
-    "tools_platforms": ["string"],
-    "databases": ["string"],
-    "other": ["string"]
+    "programming_languages": [],
+    "frameworks_libraries": [],
+    "tools_platforms": [],
+    "databases": [],
+    "other": []
   },
   "soft_skills": ["string"],
   "languages": [
@@ -1071,20 +1073,22 @@ Return ONLY the JSON object as output.`;
         );
 
         // Now generate ATS-optimized version
-        console.log('🤖 Generating ATS-Optimized Resume...');
 
-        const atsPrompt = `
+    const atsPrompt = `
 You are an ATS (Applicant Tracking System) optimization expert. Create an ATS-compliant, professionally formatted resume from the following extracted resume data.
+
+**CRITICAL**: Only include technical skills (programming languages, frameworks, databases, etc.) if they are ACTUALLY present in the extracted data. For non-technical resumes, focus on soft skills, professional competencies, and industry-specific skills instead.
 
 Guidelines for ATS optimization:
 1. Use clear, standard section headings (e.g., "Professional Experience", "Education", "Skills")
 2. Include industry-relevant keywords and action verbs
 3. Format dates consistently (MM/YYYY format)
-4. Use bullet points for achievements (start with strong action verbs)
+4. Use bullet points for clarity
 5. Quantify achievements where possible (numbers, percentages, metrics)
 6. Optimize professional summary with target keywords
 7. Group skills by category for better parsing
 8. Ensure proper formatting for ATS parsing (avoid tables, images, complex formatting)
+9. **Do NOT fabricate or add technical skills that are not in the original resume**
 
 Extracted resume data:
 ${JSON.stringify(extractedData, null, 2)}
@@ -1126,11 +1130,11 @@ Generate an ATS-optimized resume in this JSON structure:
     }
   ],
   "technicalSkills": {
-    "programmingLanguages": ["string"],
-    "frameworksLibraries": ["string"],
-    "toolsPlatforms": ["string"],
-    "databases": ["string"],
-    "other": ["string"]
+    "programmingLanguages": [],
+    "frameworksLibraries": [],
+    "toolsPlatforms": [],
+    "databases": [],
+    "other": []
   },
   "certifications": [
     {
