@@ -17,12 +17,21 @@ class PDSScoringService {
       };
     }
     
-    // Level 2: Company config
+    // Level 2: Company config (merge with defaults)
     if (job.companyId && job.companyId.scoringConfig) {
-      return {
-        config: job.companyId.scoringConfig,
-        source: 'company-custom'
-      };
+      const companyConfig = this.mergeConfigWithDefaults(job.companyId.scoringConfig);
+      
+      // Check if company config has at least one enabled criterion
+      const hasEnabledCriteria = Object.values(companyConfig).some(
+        criterion => criterion.enabled === true
+      );
+      
+      if (hasEnabledCriteria) {
+        return {
+          config: companyConfig,
+          source: 'company-custom'
+        };
+      }
     }
     
     // Level 1: System default (fallback)
@@ -30,6 +39,36 @@ class PDSScoringService {
       config: DEFAULT_SCORING_CONFIG,
       source: 'default'
     };
+  }
+  
+  /**
+   * Merge company/job config with system defaults to ensure completeness
+   */
+  mergeConfigWithDefaults(customConfig) {
+    const mergedConfig = {};
+    
+    Object.keys(DEFAULT_SCORING_CONFIG).forEach(key => {
+      const dbCriterion = customConfig[key] || {};
+      const defaultCriterion = DEFAULT_SCORING_CONFIG[key];
+      
+      // Clean DB values - remove undefined/null/empty arrays
+      const cleanDbCriterion = {};
+      Object.keys(dbCriterion).forEach(field => {
+        const value = dbCriterion[field];
+        if (value !== undefined && value !== null && 
+            !(Array.isArray(value) && value.length === 0)) {
+          cleanDbCriterion[field] = value;
+        }
+      });
+      
+      // Merge: defaults + cleaned DB values
+      mergedConfig[key] = {
+        ...defaultCriterion,
+        ...cleanDbCriterion
+      };
+    });
+    
+    return mergedConfig;
   }
   
   /**
@@ -68,7 +107,7 @@ class PDSScoringService {
         earnedPoints: criteriaScore.points,
         maxPoints: criteria.maxPoints,
         weight: criteria.weight,
-        percentage: (criteriaScore.points / criteria.maxPoints) * 100,
+        percentage: criteria.maxPoints > 0 ? (criteriaScore.points / criteria.maxPoints) * 100 : 0,
         matchedCriteria: criteriaScore.matchedCriteria,
         details: criteriaScore.details,
         enabled: true
@@ -77,7 +116,9 @@ class PDSScoringService {
       breakdown.totalScore += criteriaScore.points;
     }
     
-    breakdown.percentage = (breakdown.totalScore / breakdown.maxPossibleScore) * 100;
+    breakdown.percentage = breakdown.maxPossibleScore > 0 
+      ? (breakdown.totalScore / breakdown.maxPossibleScore) * 100 
+      : 0;
     
     return breakdown;
   }
