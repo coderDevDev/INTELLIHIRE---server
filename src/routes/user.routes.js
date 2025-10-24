@@ -124,6 +124,7 @@ router.put(
         'address',
         'gender',
         'dob',
+        'summary',
         'experience',
         'education',
         'certification',

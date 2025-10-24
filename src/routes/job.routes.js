@@ -428,6 +428,43 @@ router.put(
   }
 );
 
+// Update job status (admin only)
+router.patch(
+  '/:id/status',
+  [auth, authorize('admin')],
+  async (req, res) => {
+    try {
+      const { status } = req.body;
+      
+      // Validate status
+      const validStatuses = ['draft', 'active', 'paused', 'closed', 'archived'];
+      if (!status || !validStatuses.includes(status)) {
+        return res.status(400).json({ 
+          message: 'Invalid status. Must be one of: draft, active, paused, closed, archived' 
+        });
+      }
+
+      const job = await Job.findById(req.params.id);
+
+      if (!job) {
+        return res.status(404).json({ message: 'Job not found' });
+      }
+
+      job.status = status;
+      await job.save();
+
+      res.json({ 
+        message: 'Job status updated successfully',
+        job 
+      });
+    } catch (error) {
+      res
+        .status(500)
+        .json({ message: 'Error updating job status', error: error.message });
+    }
+  }
+);
+
 // Delete job (employer/admin only)
 router.delete(
   '/:id',

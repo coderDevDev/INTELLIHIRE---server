@@ -30,6 +30,7 @@ const userSchema = new mongoose.Schema(
     },
     gender: String,
     dob: Date,
+    summary: String,
     experience: { type: [Object], default: [] },
     education: { type: [Object], default: [] },
     certification: { type: [Object], default: [] },
