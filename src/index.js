@@ -47,7 +47,11 @@ const app = express();
 // Middleware
 app.use(
   cors({
-    origin: ['https://intellihire-client.vercel.app', 'http://localhost:3000']
+    origin: [
+      'https://intellihire-client.vercel.app',
+      'http://localhost:3000',
+      'https://intellihire-server.onrender.com'
+    ]
   })
 );
 app.use(helmet());
