@@ -20,7 +20,7 @@ class EmailService {
     email,
     firstName,
     verificationToken,
-    baseUrl = process.env.CLIENT_URL || 'http://localhost:3000'
+    baseUrl = process.env.CLIENT_URL || 'https://intellihire-client.vercel.app'
   ) {
     try {
       if (!this.isConnected) {

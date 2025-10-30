@@ -31,6 +31,7 @@ const statsRoutes = require('./routes/stats.routes');
 const applicantRankingRoutes = require('./routes/applicantRanking.routes');
 const messageRoutes = require('./routes/message.routes');
 const conversationRoutes = require('./routes/conversation.routes');
+const emailCampaignRoutes = require('./routes/emailCampaign.routes');
 
 const fs = require('fs');
 const pdf = require('pdf-parse');
@@ -51,8 +52,16 @@ app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.use(cors({ origin: 'http://localhost:3000' }));
+
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' }
+  })
+);
+
 // Serve static files
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/uploads', express.static('uploads'));
 
 // MongoDB Connection Configuration
 const connectDB = async () => {
@@ -135,6 +144,7 @@ app.use('/api/stats', statsRoutes);
 app.use('/api/rankings', applicantRankingRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/conversations', conversationRoutes);
+app.use('/api/email-campaigns', emailCampaignRoutes);
 
 app.get('/', (req, res) => {
   res.send('Server is running');

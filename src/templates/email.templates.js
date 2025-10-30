@@ -296,7 +296,7 @@ const passwordResetTemplate = handlebars.compile(baseTemplate);
 const getPasswordResetEmailData = (
   email,
   resetToken,
-  baseUrl = 'http://localhost:3000'
+  baseUrl = 'https://intellihire-client.vercel.app'
 ) => {
   return {
     title: 'Reset Your Password',
@@ -319,7 +319,7 @@ const getPasswordResetEmailData = (
 };
 
 // Welcome email template
-const getWelcomeEmailData = (firstName, baseUrl = 'http://localhost:3000') => {
+const getWelcomeEmailData = (firstName, baseUrl = 'https://intellihire-client.vercel.app') => {
   return {
     title: 'Welcome to InteliHire!',
     message: `Hi ${firstName}!<br><br>Welcome to InteliHire! We're excited to have you join our AI-powered job matching platform. Your account has been successfully created and you can now start exploring amazing career opportunities.`,
@@ -547,6 +547,42 @@ const sendApplicationStatusEmail = async (
   };
 };
 
+// Campaign Newsletter Template
+const sendCampaignEmail = async (email, subject, content, attachedJobs = []) => {
+  let emailHtml = baseTemplate.replace('{{title}}', subject);
+  emailHtml = emailHtml.replace('{{message}}', content);
+  
+  // Add attached jobs if any
+  if (attachedJobs && attachedJobs.length > 0) {
+    let jobsSection = '<div style="margin-top: 30px;">';
+    jobsSection += '<h3 style="color: #1f2937; font-size: 20px; margin-bottom: 20px;">📢 Featured Job Opportunities</h3>';
+    
+    attachedJobs.forEach(job => {
+      jobsSection += `
+        <div style="background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 12px; padding: 20px; margin-bottom: 15px;">
+          <h4 style="color: #1f2937; font-size: 18px; margin-bottom: 10px;">${job.title}</h4>
+          <p style="color: #6b7280; margin-bottom: 10px;">${job.description ? job.description.substring(0, 200) + '...' : 'No description available'}</p>
+          <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
+            <span style="color: #3b82f6; font-size: 14px;">📍 ${job.location || 'N/A'}</span>
+            <span style="color: #10b981; font-size: 14px;">💰 ${job.salaryMin ? '₱' + job.salaryMin.toLocaleString() : 'Negotiable'}</span>
+            <span style="color: #8b5cf6; font-size: 14px;">💼 ${job.employmentType || 'Full-time'}</span>
+          </div>
+          <a href="${process.env.CLIENT_URL}/jobs/${job._id}" style="display: inline-block; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; text-decoration: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; font-size: 14px;">View Job Details</a>
+        </div>
+      `;
+    });
+    
+    jobsSection += '</div>';
+    emailHtml = emailHtml.replace('{{#if infoBox}}', jobsSection + '{{#if infoBox}}');
+  }
+  
+  return {
+    to: email,
+    subject: subject,
+    html: emailHtml
+  };
+};
+
 module.exports = {
   passwordResetTemplate,
   getPasswordResetEmailData,
@@ -554,5 +590,6 @@ module.exports = {
   sendPasswordResetEmail,
   sendWelcomeEmail,
   sendEmailVerificationEmail,
-  sendApplicationStatusEmail
+  sendApplicationStatusEmail,
+  sendCampaignEmail
 };

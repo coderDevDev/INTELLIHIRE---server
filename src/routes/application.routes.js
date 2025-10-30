@@ -587,7 +587,7 @@ router.get(
           applications: applications.map(app => ({
             applicantName: `${app.applicantId.firstName} ${app.applicantId.lastName}`,
             email: app.applicantId.email,
-            phone: app.applicantId.phone,
+            phone: app.applicantId.phoneNumber,
             address: app.applicantId.address,
             applicationDate: app.createdAt,
             status: app.status,
@@ -624,7 +624,7 @@ router.get('/export/all', [auth, authorize('admin')], async (req, res) => {
 
     // Get applications with populated data
     const applications = await Application.find(query)
-      .populate('applicantId', 'firstName lastName email phone address')
+      .populate('applicantId', 'firstName lastName email phoneNumber address')
       .populate('jobId', 'title companyId location')
       .populate({
         path: 'jobId',
@@ -661,8 +661,8 @@ router.get('/export/all', [auth, authorize('admin')], async (req, res) => {
         return [
           `"${applicant.firstName} ${applicant.lastName}"`,
           `"${applicant.email}"`,
-          `"${applicant.phone || ''}"`,
-          `"${applicant.address || ''}"`,
+          `"${applicant.phoneNumber || ''}"`,
+          `"${applicant.address ? `${applicant.address.street || ''}, ${applicant.address.city || ''}, ${applicant.address.province || ''}, ${applicant.address.zipCode || ''}`.trim().replace(/^,\s*|,\s*$/g, '') : ''}"`,
           `"${job.title}"`,
           `"${job.companyId.name}"`,
           `"${job.location}"`,
@@ -691,7 +691,7 @@ router.get('/export/all', [auth, authorize('admin')], async (req, res) => {
         applications: applications.map(app => ({
           applicantName: `${app.applicantId.firstName} ${app.applicantId.lastName}`,
           email: app.applicantId.email,
-          phone: app.applicantId.phone,
+          phone: app.applicantId.phoneNumber,
           address: app.applicantId.address,
           jobTitle: app.jobId.title,
           company: app.jobId.companyId.name,
@@ -725,7 +725,7 @@ router.get('/export/rankings', [auth, authorize('admin')], async (req, res) => {
 
     // Get rankings with populated data
     const rankings = await ApplicantRanking.find(query)
-      .populate('applicantId', 'firstName lastName email phone address')
+      .populate('applicantId', 'firstName lastName email phoneNumber address')
       .populate('jobId', 'title companyId location')
       .populate({
         path: 'jobId',
@@ -763,7 +763,7 @@ router.get('/export/rankings', [auth, authorize('admin')], async (req, res) => {
           ranking.rank,
           `"${applicant.firstName} ${applicant.lastName}"`,
           `"${applicant.email}"`,
-          `"${applicant.phone || ''}"`,
+          `"${applicant.phoneNumber || ''}"`,
           `"${job.title}"`,
           `"${job.companyId.name}"`,
           `"${job.location}"`,
@@ -795,7 +795,8 @@ router.get('/export/rankings', [auth, authorize('admin')], async (req, res) => {
           rank: ranking.rank,
           applicantName: `${ranking.applicantId.firstName} ${ranking.applicantId.lastName}`,
           email: ranking.applicantId.email,
-          phone: ranking.applicantId.phone,
+          phone: ranking.applicantId.phoneNumber,
+          address: ranking.applicantId.address,
           jobTitle: ranking.jobId.title,
           company: ranking.jobId.companyId.name,
           jobLocation: ranking.jobId.location,
