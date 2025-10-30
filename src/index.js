@@ -45,7 +45,11 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(
+  cors({
+    origin: ['https://intellihire-client.vercel.app', 'http://localhost:3000']
+  })
+);
 app.use(helmet());
 app.use(compression());
 app.use(morgan('dev'));
