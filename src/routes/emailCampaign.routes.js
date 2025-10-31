@@ -5,6 +5,7 @@ const User = require('../models/user.model');
 const Job = require('../models/job.model');
 const emailService = require('../services/email.service');
 const { auth, authorize } = require('../middleware/auth.middleware');
+const { getCampaignTemplate } = require('../templates/email.templates');
 
 // Get all campaigns
 router.get('/', auth, authorize('admin'), async (req, res) => {
@@ -312,6 +313,30 @@ router.post('/test', auth, async (req, res) => {
     }
   } catch (error) {
     res.status(500).json({ message: 'Error sending test email', error: error.message });
+  }
+});
+
+// Get email template by campaign type
+router.get('/templates/:type', auth, authorize('admin'), async (req, res) => {
+  try {
+    const { type } = req.params;
+    const validTypes = ['newsletter', 'job_alert', 'reminder', 'announcement', 'custom'];
+    
+    if (!validTypes.includes(type)) {
+      return res.status(400).json({ 
+        message: 'Invalid template type', 
+        validTypes 
+      });
+    }
+    
+    const template = getCampaignTemplate(type);
+    
+    res.json({
+      type,
+      template
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching template', error: error.message });
   }
 });
 

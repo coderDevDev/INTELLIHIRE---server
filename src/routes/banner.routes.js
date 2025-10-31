@@ -6,6 +6,23 @@ const Banner = require('../models/banner.model');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const cloudinary = require('cloudinary').v2;
+
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+// Check if Cloudinary is configured
+const isCloudinaryConfigured = () => {
+  return (
+    process.env.CLOUDINARY_CLOUD_NAME &&
+    process.env.CLOUDINARY_API_KEY &&
+    process.env.CLOUDINARY_API_SECRET
+  );
+};
 
 // Configure multer for banner image uploads
 const storage = multer.diskStorage({
@@ -302,7 +319,45 @@ router.post(
         });
       }
 
-      const imageUrl = `/uploads/banners/${req.file.filename}`;
+      let imageUrl;
+      let cloudinaryData = null;
+
+      // Try to upload to Cloudinary if configured
+      if (isCloudinaryConfigured()) {
+        try {
+          const result = await cloudinary.uploader.upload(req.file.path, {
+            folder: 'intellihire/banners',
+            resource_type: 'image',
+            allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
+            transformation: [
+              { width: 1920, height: 600, crop: 'limit' },
+              { quality: 'auto' },
+              { fetch_format: 'auto' }
+            ]
+          });
+
+          imageUrl = result.secure_url;
+          cloudinaryData = {
+            publicId: result.public_id,
+            width: result.width,
+            height: result.height,
+            format: result.format
+          };
+
+          // Delete local file after successful Cloudinary upload
+          fs.unlinkSync(req.file.path);
+
+          console.log('Image uploaded to Cloudinary:', imageUrl);
+        } catch (cloudinaryError) {
+          console.error('Cloudinary upload failed, using local storage:', cloudinaryError);
+          // Fall back to local storage
+          imageUrl = `/uploads/banners/${req.file.filename}`;
+        }
+      } else {
+        // Use local storage if Cloudinary is not configured
+        imageUrl = `/uploads/banners/${req.file.filename}`;
+        console.log('Cloudinary not configured, using local storage');
+      }
 
       res.json({
         success: true,
@@ -310,12 +365,17 @@ router.post(
           imageUrl,
           filename: req.file.filename,
           originalName: req.file.originalname,
-          size: req.file.size
+          size: req.file.size,
+          cloudinary: cloudinaryData
         },
         message: 'Image uploaded successfully'
       });
     } catch (error) {
       console.error('Error uploading image:', error);
+      // Clean up file if it exists
+      if (req.file && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
       res.status(500).json({
         success: false,
         message: 'Server error while uploading image',
@@ -342,7 +402,45 @@ router.post(
         });
       }
 
-      const imageUrl = `/uploads/banners/${req.file.filename}`;
+      let imageUrl;
+      let cloudinaryData = null;
+
+      // Try to upload to Cloudinary if configured
+      if (isCloudinaryConfigured()) {
+        try {
+          const result = await cloudinary.uploader.upload(req.file.path, {
+            folder: 'intellihire/banners',
+            resource_type: 'image',
+            allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
+            transformation: [
+              { width: 1920, height: 600, crop: 'limit' },
+              { quality: 'auto' },
+              { fetch_format: 'auto' }
+            ]
+          });
+
+          imageUrl = result.secure_url;
+          cloudinaryData = {
+            publicId: result.public_id,
+            width: result.width,
+            height: result.height,
+            format: result.format
+          };
+
+          // Delete local file after successful Cloudinary upload
+          fs.unlinkSync(req.file.path);
+
+          console.log('Image uploaded to Cloudinary:', imageUrl);
+        } catch (cloudinaryError) {
+          console.error('Cloudinary upload failed, using local storage:', cloudinaryError);
+          // Fall back to local storage
+          imageUrl = `/uploads/banners/${req.file.filename}`;
+        }
+      } else {
+        // Use local storage if Cloudinary is not configured
+        imageUrl = `/uploads/banners/${req.file.filename}`;
+        console.log('Cloudinary not configured, using local storage');
+      }
 
       res.json({
         success: true,
@@ -350,12 +448,17 @@ router.post(
           imageUrl,
           filename: req.file.filename,
           originalName: req.file.originalname,
-          size: req.file.size
+          size: req.file.size,
+          cloudinary: cloudinaryData
         },
         message: 'Image uploaded successfully'
       });
     } catch (error) {
       console.error('Error uploading image:', error);
+      // Clean up file if it exists
+      if (req.file && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
       res.status(500).json({
         success: false,
         message: 'Server error while uploading image',
