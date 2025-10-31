@@ -110,7 +110,7 @@ class EmailService {
   async sendWelcome(
     email,
     firstName,
-    baseUrl = process.env.CLIENT_URL || 'http://localhost:3000'
+    baseUrl = process.env.p || 'http://localhost:3000'
   ) {
     try {
       if (!this.isConnected) {

@@ -547,7 +547,7 @@ router.post('/', [auth, upload.single('file')], async (req, res) => {
       }
     }
 
-    return true;
+
 
     // Save document info to DB, including type
     const doc = new Document({
