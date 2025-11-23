@@ -268,7 +268,7 @@ const baseTemplate = `
             
             {{#if token}}
             <div class="token-display">
-                <strong>Reset Token:</strong><br>
+                Reset Token:<br>
                 {{token}}
             </div>
             {{/if}}
@@ -322,7 +322,7 @@ const getPasswordResetEmailData = (
 const getWelcomeEmailData = (firstName, baseUrl = 'https://intellihire-client.vercel.app') => {
   return {
     title: 'Welcome to InteliHire!',
-    message: `Hi ${firstName}!<br><br>Welcome to InteliHire! We're excited to have you join our AI-powered job matching platform. Your account has been successfully created and you can now start exploring amazing career opportunities.`,
+    message: `Hi ${firstName}! Welcome to InteliHire! We're excited to have you join our AI-powered job matching platform. Your account has been successfully created and you can now start exploring amazing career opportunities.`,
     ctaButton: {
       text: 'Get Started',
       url: `${baseUrl}/dashboard`
@@ -369,7 +369,7 @@ const sendEmailVerificationEmail = async (
     firstName: firstName || 'User',
     message: `Hi ${
       firstName || 'there'
-    },<br><br>Thank you for registering with InteliHire! To complete your registration and start your journey, please verify your email address by clicking the button below.`,
+    }, Thank you for registering with InteliHire! To complete your registration and start your journey, please verify your email address by clicking the button below.`,
     ctaButton: {
       text: 'Verify Email Address',
       url: `${baseUrl}/verify-email/${verificationToken}`
@@ -415,7 +415,7 @@ const sendApplicationStatusEmail = async (
       title: '📝 Application Received',
       emoji: '📝',
       color: '#3b82f6',
-      message: `Your application for <strong>${jobTitle}</strong> at <strong>${companyName}</strong> has been received and is under review.`,
+      message: `Your application for ${jobTitle} at ${companyName} has been received and is under review.`,
       ctaText: 'View Application',
       ctaUrl: `${baseUrl}/dashboard/applicant/applications`
     },
@@ -423,7 +423,7 @@ const sendApplicationStatusEmail = async (
       title: '🔍 Application Under Review',
       emoji: '🔍',
       color: '#f59e0b',
-      message: `Good news! Your application for <strong>${jobTitle}</strong> at <strong>${companyName}</strong> is currently being reviewed by our team.`,
+      message: `Good news! Your application for ${jobTitle} at ${companyName} is currently being reviewed by our team.`,
       ctaText: 'View Application Status',
       ctaUrl: `${baseUrl}/dashboard/applicant/applications`
     },
@@ -431,7 +431,7 @@ const sendApplicationStatusEmail = async (
       title: '🎉 Interview Invitation',
       emoji: '🎉',
       color: '#8b5cf6',
-      message: `Congratulations, ${firstName}! We are pleased to invite you for an interview for the <strong>${jobTitle}</strong> position at <strong>${companyName}</strong>.`,
+      message: `Congratulations, ${firstName}! We are pleased to invite you for an interview for the ${jobTitle} position at ${companyName}.`,
       ctaText: 'View Interview Details',
       ctaUrl: `${baseUrl}/dashboard/applicant/applications`
     },
@@ -439,7 +439,7 @@ const sendApplicationStatusEmail = async (
       title: '🌟 Job Offer',
       emoji: '🌟',
       color: '#10b981',
-      message: `Fantastic news, ${firstName}! We are delighted to offer you the <strong>${jobTitle}</strong> position at <strong>${companyName}</strong>.`,
+      message: `Fantastic news, ${firstName}! We are delighted to offer you the ${jobTitle} position at ${companyName}.`,
       ctaText: 'View Offer Details',
       ctaUrl: `${baseUrl}/dashboard/applicant/applications`
     },
@@ -447,7 +447,7 @@ const sendApplicationStatusEmail = async (
       title: '🎊 Welcome Aboard!',
       emoji: '🎊',
       color: '#059669',
-      message: `Congratulations, ${firstName}! Welcome to the <strong>${companyName}</strong> team as our new <strong>${jobTitle}</strong>. We look forward to working with you!`,
+      message: `Congratulations, ${firstName}! Welcome to the ${companyName} team as our new ${jobTitle}. We look forward to working with you!`,
       ctaText: 'Access Dashboard',
       ctaUrl: `${baseUrl}/dashboard/applicant`
     },
@@ -455,7 +455,7 @@ const sendApplicationStatusEmail = async (
       title: '📋 Application Update',
       emoji: '📋',
       color: '#6b7280',
-      message: `Thank you for your interest in the <strong>${jobTitle}</strong> position at <strong>${companyName}</strong>. After careful consideration, we have decided to move forward with other candidates.`,
+      message: `Thank you for your interest in the ${jobTitle} position at ${companyName}. After careful consideration, we have decided to move forward with other candidates.`,
       ctaText: 'Browse More Jobs',
       ctaUrl: `${baseUrl}/jobs`
     },
@@ -463,7 +463,7 @@ const sendApplicationStatusEmail = async (
       title: '↩️ Application Withdrawn',
       emoji: '↩️',
       color: '#6b7280',
-      message: `Your application for <strong>${jobTitle}</strong> at <strong>${companyName}</strong> has been withdrawn as requested.`,
+      message: `Your application for ${jobTitle} at ${companyName} has been withdrawn as requested.`,
       ctaText: 'Browse Jobs',
       ctaUrl: `${baseUrl}/jobs`
     }
@@ -473,7 +473,7 @@ const sendApplicationStatusEmail = async (
 
   const templateData = {
     title: config.title,
-    message: `Hi ${firstName},<br><br>${config.message}`,
+    message: `Hi ${firstName},${config.message}`,
     ctaButton: {
       text: config.ctaText,
       url: config.ctaUrl
@@ -497,7 +497,7 @@ const sendApplicationStatusEmail = async (
     if (interviewDate) {
       const date = new Date(interviewDate);
       interviewInfo.push(
-        `📅 <strong>Date & Time:</strong> ${date.toLocaleString('en-US', {
+        `📅 Date & Time: ${date.toLocaleString('en-US', {
           weekday: 'long',
           year: 'numeric',
           month: 'long',
@@ -517,11 +517,11 @@ const sendApplicationStatusEmail = async (
           : interviewType === 'video'
           ? 'Video Call'
           : interviewType;
-      interviewInfo.push(`🎥 <strong>Type:</strong> ${typeLabel}`);
+      interviewInfo.push(`🎥 Type: ${typeLabel}`);
     }
 
     if (interviewLocation) {
-      interviewInfo.push(`📍 <strong>Location:</strong> ${interviewLocation}`);
+      interviewInfo.push(`📍 Location: ${interviewLocation}`);
     }
 
     templateData.infoBox = {
