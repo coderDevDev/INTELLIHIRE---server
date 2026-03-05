@@ -556,12 +556,16 @@ router.post('/', [auth, upload.single('file')], async (req, res) => {
       fileUrl: req.file.path,
       type: req.body.type
     });
+
+      console.log({doc});
+      
     await doc.save();
 
     // --- PDS PDF processing with GoogleGenerativeAI + pdf-parse ---
     if (doc.type === 'pds' && req.file.mimetype === 'application/pdf') {
       const pdf = require('pdf-parse');
       const { GoogleGenerativeAI } = require('@google/generative-ai');
+      const { rateLimiter } = require('../utils/gemini-rate-limiter');
       const outputDir = path.join('uploads', 'pds', doc._id.toString());
 
       if (!fs.existsSync(outputDir)) {
@@ -582,7 +586,8 @@ router.post('/', [auth, upload.single('file')], async (req, res) => {
 
         // Initialize GoogleGenerativeAI
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+        // Using gemini-1.5-flash for better rate limits
+        const model = genAI.getGenerativeModel({ model: 'gemini-3.1-flash-lite-preview' });
 
         // Create the prompt for PDS parsing
         const prompt = `
@@ -771,11 +776,16 @@ ${rawText}
 
 Return ONLY the JSON object as output.`;
 
-        console.log('🤖 Processing with GoogleGenerativeAI...');
+        console.log('🤖 Processing with Gemini 1.5 Pro...');
 
-        // Generate content using Gemini
-        const result = await model.generateContent(prompt);
-        const responseText = result.response.text();
+        // Generate content using Gemini with rate limiting
+        const responseText = await rateLimiter.executeWithRetry(
+          async () => {
+            const result = await model.generateContent(prompt);
+            return result.response.text();
+          },
+          'PDS parsing'
+        );
 
         console.log('✅ Received response from Gemini');
 
@@ -943,10 +953,15 @@ Return ONLY the JSON object as output.`;
       }
     }
 
+
+
     // --- Resume/CV processing with GoogleGenerativeAI ---
     if (doc.type === 'resume' && req.file.mimetype === 'application/pdf') {
+     
+     
       const pdf = require('pdf-parse');
       const { GoogleGenerativeAI } = require('@google/generative-ai');
+      const { rateLimiter } = require('../utils/gemini-rate-limiter');
       const outputDir = path.join('uploads', 'resume', doc._id.toString());
 
       if (!fs.existsSync(outputDir)) {
@@ -967,7 +982,8 @@ Return ONLY the JSON object as output.`;
 
         // Initialize GoogleGenerativeAI
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+        // Using gemini-1.5-flash for better rate limits
+        const model = genAI.getGenerativeModel({ model: 'gemini-3.1-flash-lite-preview' });
 
         // Create the prompt for Resume parsing and extraction
         const extractPrompt = `
@@ -1078,9 +1094,14 @@ Return ONLY the JSON object as output.`;
 
         console.log('🤖 Processing Resume with GoogleGenerativeAI...');
 
-        // Generate content using Gemini
-        const extractResult = await model.generateContent(extractPrompt);
-        const extractResponseText = extractResult.response.text();
+        // Generate content using Gemini with rate limiting
+        const extractResponseText = await rateLimiter.executeWithRetry(
+          async () => {
+            const result = await model.generateContent(extractPrompt);
+            return result.response.text();
+          },
+          'Resume extraction'
+        );
 
         console.log('✅ Received extraction response from Gemini');
 
@@ -1632,6 +1653,8 @@ router.get(
         userId: userId
       }).sort({ createdAt: -1 });
 
+      console.log({resume})
+
       if (!resume) {
         console.log(`❌ No saved resume found for user: ${userId}`);
         return res.status(404).json({
@@ -1678,6 +1701,9 @@ router.get('/resume/:documentId', auth, async (req, res) => {
       userId: req.user._id,
       documentId: documentId
     }).sort({ createdAt: -1 });
+
+
+    console.log({resume})
 
     if (!resume) {
       console.log(`❌ No saved resume found for document: ${documentId}`);
